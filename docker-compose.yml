@@ -1,0 +1,22 @@
+services:
+  php-fpm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: php_runtime
+    container_name: php_fpm_service
+    volumes:
+      - .:/var/www/html
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: webserver
+    container_name: nginx_service
+    ports:
+      - "8080:80"
+    depends_on:
+      - php-fpm
+    volumes:
+      - .:/var/www/html

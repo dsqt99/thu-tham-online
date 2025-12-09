@@ -1,0 +1,171 @@
+:root {
+    --bg: #f4efe8;
+    --text: #2f2e2c;
+    --accent: #8c7156;
+    --border: #d6c4a2;
+    --white: #ffffff;
+}
+
+.tv-container {
+    font-family: "Inter", sans-serif;
+    color: var(--text);
+    padding: 40px 20px;
+    background: var(--bg);
+    max-width: 110% !important;
+    border-radius: 8px;
+}
+
+.tv-hero {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.tv-hero h1 {
+    font-family: "Playfair Display", serif;
+    font-size: 32px;
+    margin-bottom: 10px;
+    color: var(--accent);
+}
+
+.tv-hero p {
+    font-size: 16px;
+    opacity: 0.8;
+}
+
+.tv-upload-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+.tv-upload-card {
+    background: var(--white);
+    padding: 18px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07);
+}
+
+.tv-label {
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: var(--accent);
+}
+
+.tv-label span {
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.tv-label small {
+    color: #888;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.tv-dropzone-inner {
+    position: relative;
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+    padding: 25px;
+    text-align: center;
+    transition: all 0.25s ease;
+    cursor: pointer;
+}
+
+.tv-dropzone-inner:hover {
+    border-color: var(--accent);
+    background: rgba(140, 113, 86, 0.05);
+}
+
+.tv-dropzone-inner input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.tv-placeholder {
+    width: 60px;
+    opacity: 0.4;
+}
+
+.tv-preview img {
+    margin-top: 10px;
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+}
+
+.tv-btn-main {
+    background: var(--accent);
+    padding: 14px 28px;
+    color: white;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    transition: 0.25s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.tv-btn-main:hover {
+    background: #7a6049;
+    transform: translateY(-1px);
+}
+
+.tv-result {
+    display: none;
+    margin-top: 40px;
+    text-align: center;
+}
+
+.tv-result h2 {
+    font-family: "Playfair Display";
+    font-size: 28px;
+    margin-bottom: 20px;
+}
+
+.tv-result-box img {
+    width: 100%;
+    max-width: 700px;
+    border-radius: 14px;
+    box-shadow: 0 3px 18px rgba(0, 0, 0, 0.18);
+}
+
+.tv-btn-download {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 10px 25px;
+    background: var(--white);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 10px;
+    text-decoration: none;
+    transition: 0.25s ease;
+}
+
+.tv-btn-download:hover {
+    background: var(--accent);
+    color: white;
+}
+
+.tv-status {
+    margin-top: 20px;
+    font-size: 15px;
+}
+
+.tv-dropzone-inner small {
+    color: #888;
+    display: block;
+}
+
+.preview-wrap img {
+    margin-top: 10px;
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+}
