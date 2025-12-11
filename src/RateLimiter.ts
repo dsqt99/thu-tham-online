@@ -38,7 +38,38 @@ export class RateLimiter {
         try {
             const contents = fs.readFileSync(this.storeFile, 'utf-8');
             const data = JSON.parse(contents);
-            return data || {};
+            if (!data || typeof data !== 'object') {
+                return {};
+            }
+            
+            // Cleanup old entries (older than today)
+            const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
+            const cleaned: Record<string, number> = {};
+            let hasOldEntries = false;
+            
+            for (const [key, value] of Object.entries(data)) {
+                // Key format: {id}_{YYYYMMDD}
+                const parts = key.split('_');
+                if (parts.length >= 2) {
+                    const datePart = parts[parts.length - 1]; // Last part is date
+                    // Keep only today's entries
+                    if (datePart === today) {
+                        cleaned[key] = value as number;
+                    } else {
+                        hasOldEntries = true;
+                    }
+                } else {
+                    // Keep malformed keys for safety
+                    cleaned[key] = value as number;
+                }
+            }
+            
+            // Write cleaned data if there were old entries
+            if (hasOldEntries) {
+                this.writeStore(cleaned);
+            }
+            
+            return cleaned;
         } catch (error) {
             return {};
         }
