@@ -1,22 +1,23 @@
 services:
-  php-fpm:
+  app:
     build:
       context: .
       dockerfile: Dockerfile
-      target: php_runtime
-    container_name: php_fpm_service
-    volumes:
-      - .:/var/www/html
-
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: webserver
-    container_name: nginx_service
+      target: runtime
+    container_name: node_app_service
     ports:
-      - "8080:80"
-    depends_on:
-      - php-fpm
+      - "3000:3000"
     volumes:
-      - .:/var/www/html
+      - .:/app
+      - /app/node_modules
+      - ./storage:/app/storage
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge

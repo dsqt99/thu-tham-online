@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trải Thảm Vào Phòng Của Bạn</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/heic2any/dist/heic2any.min.js"></script>
+</head>
+
+<body>
+    <!-- Nút Back về trang chủ - luôn hiển thị -->
+    <div class="back-home">
+        <a href="https://thamhanlong.com/" class="back-btn">← Về trang chủ</a>
+    </div>
+
+    <div class="tv-container">
+        <!-- Giao diện Chatbot -->
+        <div id="chatbot-container" class="chatbot-container">
+            <div class="chatbot-header">
+                <div class="chatbot-avatar">
+                    <img src="avatar.webp" alt="Avatar">
+                </div>
+                <div class="chatbot-info">
+                    <h3>Nhân viên tư vấn</h3>
+                    <span class="chatbot-status">Đang trực tuyến</span>
+                </div>
+            </div>
+
+            <div id="chatbot-messages" class="chatbot-messages">
+                <!-- Messages sẽ được thêm bằng JavaScript -->
+            </div>
+
+            <!-- Step 1: Chọn loại phòng -->
+            <div id="step-room-type" class="step-container" style="display: none;">
+                <div class="options-grid">
+                    <button class="option-btn" data-value="phong-khach">Phòng khách</button>
+                    <button class="option-btn" data-value="phong-ngu">Phòng ngủ</button>
+                    <button class="option-btn" data-value="phong-lam-viec">Phòng làm việc</button>
+                    <button class="option-btn" data-value="phong-bep">Phòng bếp</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Chọn phong cách -->
+            <div id="step-style" class="step-container" style="display: none;">
+                <div class="options-grid">
+                    <button class="option-btn" data-value="hien-dai">Hiện đại</button>
+                    <button class="option-btn" data-value="co-dien">Cổ điển</button>
+                    <button class="option-btn" data-value="toi-gian">Tối giản</button>
+                    <button class="option-btn" data-value="scandinavian">Scandinavian</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Chọn tông màu -->
+            <div id="step-color" class="step-container" style="display: none;">
+                <div class="options-grid">
+                    <button class="option-btn" data-value="trang">Trắng</button>
+                    <button class="option-btn" data-value="xam">Xám</button>
+                    <button class="option-btn" data-value="nau">Nâu</button>
+                    <button class="option-btn" data-value="xanh">Xanh</button>
+                    <button class="option-btn" data-value="hong">Hồng</button>
+                    <button class="option-btn" data-value="khac">Khác</button>
+                </div>
+            </div>
+
+            <!-- Step 4: Danh sách thảm -->
+            <div id="step-rugs" class="step-container" style="display: none;">
+                <div class="image-scroll-container">
+                    <div id="rugs-list" class="image-scroll-list">
+                        <!-- Ảnh thảm sẽ được load bằng JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Chọn ảnh phòng -->
+            <div id="step-room" class="step-container" style="display: none;">
+                <div class="room-choice-buttons">
+                    <button id="btn-choose-room-sample" class="choice-btn">Chọn ảnh phòng có sẵn</button>
+                    <button id="btn-upload-room" class="choice-btn">Tải ảnh phòng lên</button>
+                </div>
+
+                <!-- Danh sách ảnh phòng mẫu -->
+                <div id="rooms-list-container" class="image-scroll-container" style="display: none;">
+                    <div id="rooms-list" class="image-scroll-list">
+                        <!-- Ảnh phòng sẽ được load bằng JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Upload ảnh phòng -->
+                <div id="upload-room-container" class="upload-container" style="display: none;">
+                    <div class="upload-zone">
+                        <input type="file" id="room-file-input" accept="image/*" style="display: none;">
+                        <label for="room-file-input" class="upload-label">
+                            <span>📤 Tải ảnh phòng lên</span>
+                            <small>Tối đa 10 MB – JPG/PNG/HEIC</small>
+                        </label>
+                    </div>
+                    <div id="room-preview" class="preview-image" style="display: none;">
+                        <img id="preview-room-img" src="" alt="Preview">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 6: Nút tạo ảnh -->
+            <div id="step-generate" class="step-container" style="display: none;">
+                <button id="btn-generate" class="generate-btn">
+                    <span id="btn-text">✨ Tạo ảnh AI</span>
+                    <span id="btn-spinner" class="spinner" style="display: none;"></span>
+                </button>
+                <div id="progress-container" class="progress-container" style="display: none;">
+                    <div class="progress-bar">
+                        <div id="progress-fill" class="progress-fill" style="width: 0%;"></div>
+                    </div>
+                    <div id="progress-text" class="progress-text">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kết quả -->
+        <div id="result-container" class="result-container" style="display: none;">
+            <h2>Kết quả</h2>
+            <div class="result-image-box">
+                <img id="result-image" src="" alt="Kết quả">
+            </div>
+            <div class="result-actions">
+                <a id="download-btn" class="download-btn" download="tham_result.jpg">📥 Tải ảnh về máy</a>
+                <button id="reset-btn" class="reset-btn">🔄 Tạo lại ảnh khác</button>
+            </div>
+            <div id="status-message" class="status-message"></div>
+        </div>
+    </div>
+
+    <!-- Popup Rate Limit -->
+    <div id="rate-limit-popup" class="popup-overlay" style="display: none;">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h3>⚠️ Đã đạt giới hạn sử dụng</h3>
+                <button id="popup-close" class="popup-close">&times;</button>
+            </div>
+            <div class="popup-body">
+                <p id="popup-message">Bạn đã sử dụng tối đa 3 lần trong hôm nay. Vui lòng thử lại ngày mai hoặc liên hệ tư vấn.</p>
+            </div>
+            <div class="popup-footer">
+                <button id="popup-ok" class="popup-btn-ok">Đã hiểu</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

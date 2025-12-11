@@ -1,23 +1,64 @@
-FROM php:8.2-fpm AS php_runtime
+FROM node:20-alpine AS builder
 
-RUN apt-get update && apt-get install -y \
-    libpng-dev libjpeg-dev libwebp-dev libfreetype6-dev zlib1g-dev \
-    && docker-php-ext-configure gd --with-jpeg --with-webp --with-freetype \
-    && docker-php-ext-install gd \
-    && docker-php-ext-install pdo pdo_mysql \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
 
-WORKDIR /var/www/html
-COPY . .
+# Copy package files
+COPY package.json package-lock.json* ./
 
+# Install dependencies (including devDependencies for build)
+RUN npm ci
 
-FROM nginx:latest AS webserver
+# Copy source files and config
+COPY src ./src
+COPY tsconfig.json ./
 
-COPY ./nginx.conf /etc/nginx/conf.d/default.conf
+# Build TypeScript
+RUN npm run build
 
-COPY --from=php_runtime /var/www/html /var/www/html
+# Debug: Show what was built
+RUN echo "=== Build output ===" && \
+    ls -la && \
+    echo "=== dist directory ===" && \
+    ls -la dist/ && \
+    echo "=== Checking server.js ===" && \
+    test -f dist/server.js && echo "✓ server.js exists" || (echo "✗ server.js NOT FOUND!" && exit 1)
+
+# Production stage
+FROM node:20-alpine AS runtime
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json package-lock.json* ./
+
+# Install production dependencies only
+RUN npm ci --only=production
+
+# Copy built files from builder
+COPY --from=builder /app/dist ./dist
+
+# Debug: Verify dist exists and server.js is present
+RUN echo "=== Runtime: Checking dist ===" && \
+    ls -la /app/ && \
+    echo "=== dist contents ===" && \
+    ls -la dist/ && \
+    echo "=== Checking server.js ===" && \
+    test -f dist/server.js && echo "✓ server.js exists in runtime" || (echo "✗ server.js NOT FOUND in runtime!" && exit 1)
+
+# Copy public files
+COPY public ./public
+
+# Copy images directory
+COPY images ./images
+
+# Copy storage directory structure
+COPY storage ./storage
+
+# Create necessary directories
+RUN mkdir -p storage/temp
 
 # Expose port
-EXPOSE 80
+EXPOSE 3000
 
-CMD ["nginx", "-g", "daemon off;"]
+# Start server
+CMD ["npm", "start"]
