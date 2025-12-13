@@ -5,9 +5,9 @@ export class RateLimiter {
     private storeFile: string;
     private limitPerDay: number;
 
-    constructor(storeFile?: string, limitPerDay: number = 3) {
+    constructor(storeFile?: string, limitPerDay?: number) {
         this.storeFile = storeFile || path.join(__dirname, '../storage/usage.json');
-        this.limitPerDay = limitPerDay;
+        this.limitPerDay = limitPerDay ?? parseInt(process.env.MAX_RATE_LIMIT || '3', 10);
 
         const dir = path.dirname(this.storeFile);
         if (!fs.existsSync(dir)) {

@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import multer from 'multer';
 import cookieParser from 'cookie-parser';
@@ -48,7 +49,8 @@ const upload = multer({
 });
 
 // Initialize services
-const limiter = new RateLimiter();
+const maxRateLimit = parseInt(process.env.MAX_RATE_LIMIT || '3', 10);
+const limiter = new RateLimiter(undefined, maxRateLimit);
 const visualizer = new Visualizer();
 
 app.post('/upload', upload.fields([

@@ -41,7 +41,7 @@ export class Visualizer {
     }
 
     private async callApi(roomFile: string, rugFile: string): Promise<string> {
-        const apiUrl = "https://n8n-ec2.cahy.io.vn/webhook/bananaproGen";
+        const apiUrl = process.env.API_GEN_IMAGE_URL || "https://continew-ai.app.n8n.cloud/webhook/thu-tham-online";
 
         return new Promise((resolve, reject) => {
             const form = new FormData();
