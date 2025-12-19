@@ -9,6 +9,21 @@ import { Visualizer } from './Visualizer';
 
 const app = express();
 const port = process.env.PORT || 3000;
+const trustProxy = process.env.TRUST_PROXY;
+if (trustProxy) {
+    if (trustProxy === 'true') {
+        app.set('trust proxy', true);
+    } else if (trustProxy === 'false') {
+        app.set('trust proxy', false);
+    } else {
+        const n = Number(trustProxy);
+        if (!Number.isNaN(n)) {
+            app.set('trust proxy', n);
+        } else {
+            app.set('trust proxy', trustProxy);
+        }
+    }
+}
 
 // Middleware
 app.use(express.json());

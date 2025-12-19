@@ -4,10 +4,17 @@ import * as path from 'path';
 export class RateLimiter {
     private storeFile: string;
     private limitPerDay: number;
+    private mode: 'cookie' | 'ip' | 'both';
 
     constructor(storeFile?: string, limitPerDay?: number) {
         this.storeFile = storeFile || path.join(__dirname, '../storage/usage.json');
-        this.limitPerDay = limitPerDay ?? parseInt(process.env.MAX_RATE_LIMIT || '3', 3);
+        this.limitPerDay = limitPerDay ?? parseInt(process.env.MAX_RATE_LIMIT || '3', 10);
+        const rawMode = String(process.env.RATE_LIMIT_MODE || 'both').toLowerCase();
+        if (rawMode === 'cookie' || rawMode === 'ip' || rawMode === 'both') {
+            this.mode = rawMode;
+        } else {
+            this.mode = 'both';
+        }
 
         const dir = path.dirname(this.storeFile);
         if (!fs.existsSync(dir)) {
@@ -28,19 +35,39 @@ export class RateLimiter {
         return `${yyyy}${mm}${dd}`;
     }
 
-    private getIdentifier(req: any): string {
+    private getCookieIdentifier(req: any): string | undefined {
         if (req.cookies && req.cookies.tv_user) {
             const id = req.cookies.tv_user.replace(/[^a-zA-Z0-9_\-]/g, '');
-            return id;
-        } else {
-            return req.ip || req.connection?.remoteAddress || 'anon';
+            return id || undefined;
         }
+        return undefined;
     }
 
-    private getKey(req: any): string {
-        const id = this.getIdentifier(req);
+    private getIpIdentifier(req: any): string {
+        const rawIp = req.ip || req.connection?.remoteAddress || 'anon';
+        const normalized = String(rawIp).replace(/^::ffff:/, '');
+        return normalized.replace(/[^a-zA-Z0-9_.:\-]/g, '') || 'anon';
+    }
+
+    private getKeys(req: any): string[] {
         const date = this.getTodayVnYYYYMMDD();
-        return `${id}_${date}`;
+        const keys: string[] = [];
+
+        if (this.mode === 'cookie' || this.mode === 'both') {
+            const cookieId = this.getCookieIdentifier(req);
+            if (cookieId) keys.push(`cookie:${cookieId}_${date}`);
+        }
+
+        if (this.mode === 'ip' || this.mode === 'both') {
+            const ipId = this.getIpIdentifier(req);
+            keys.push(`ip:${ipId}_${date}`);
+        }
+
+        if (keys.length === 0) {
+            keys.push(`anon:anon_${date}`);
+        }
+
+        return keys;
     }
 
     private readStore(): Record<string, number> {
@@ -95,17 +122,26 @@ export class RateLimiter {
 
     public getCount(req: any): number {
         const data = this.readStore();
-        const key = this.getKey(req);
-        return data[key] || 0;
+        const keys = this.getKeys(req);
+        let max = 0;
+        for (const key of keys) {
+            const value = data[key] || 0;
+            if (value > max) max = value;
+        }
+        return max;
     }
 
     public increment(req: any): number {
         const data = this.readStore();
-        const key = this.getKey(req);
-        const count = (data[key] || 0) + 1;
-        data[key] = count;
+        const keys = this.getKeys(req);
+        let max = 0;
+        for (const key of keys) {
+            const count = (data[key] || 0) + 1;
+            data[key] = count;
+            if (count > max) max = count;
+        }
         this.writeStore(data);
-        return count;
+        return max;
     }
 
     public allowed(req: any): boolean {

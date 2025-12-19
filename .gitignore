@@ -7,4 +7,3 @@ dist/
 storage/temp/*
 !storage/temp/.gitkeep
 storage/usage.json
-

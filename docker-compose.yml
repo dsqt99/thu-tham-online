@@ -17,6 +17,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - TRUST_PROXY=1
     networks:
       - app-network
     restart: unless-stopped
