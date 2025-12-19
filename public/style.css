@@ -577,6 +577,37 @@ body {
     color: var(--text);
 }
 
+.popup-contact {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.popup-contact-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.popup-contact-label {
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.popup-contact-link {
+    color: var(--accent);
+    text-decoration: underline;
+    word-break: break-all;
+}
+
+.popup-contact-link:hover {
+    color: #7a6049;
+}
+
 .popup-footer {
     padding: 16px 24px 24px;
     display: flex;

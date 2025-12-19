@@ -7,7 +7,7 @@ export class RateLimiter {
 
     constructor(storeFile?: string, limitPerDay?: number) {
         this.storeFile = storeFile || path.join(__dirname, '../storage/usage.json');
-        this.limitPerDay = limitPerDay ?? parseInt(process.env.MAX_RATE_LIMIT || '3', 10);
+        this.limitPerDay = limitPerDay ?? parseInt(process.env.MAX_RATE_LIMIT || '3', 3);
 
         const dir = path.dirname(this.storeFile);
         if (!fs.existsSync(dir)) {
@@ -17,6 +17,15 @@ export class RateLimiter {
         if (!fs.existsSync(this.storeFile)) {
             fs.writeFileSync(this.storeFile, JSON.stringify({}));
         }
+    }
+
+    private getTodayVnYYYYMMDD(): string {
+        const vnOffsetMs = 7 * 60 * 60 * 1000;
+        const vnNow = new Date(Date.now() + vnOffsetMs);
+        const yyyy = vnNow.getUTCFullYear();
+        const mm = String(vnNow.getUTCMonth() + 1).padStart(2, '0');
+        const dd = String(vnNow.getUTCDate()).padStart(2, '0');
+        return `${yyyy}${mm}${dd}`;
     }
 
     private getIdentifier(req: any): string {
@@ -30,7 +39,7 @@ export class RateLimiter {
 
     private getKey(req: any): string {
         const id = this.getIdentifier(req);
-        const date = new Date().toISOString().split('T')[0].replace(/-/g, '');
+        const date = this.getTodayVnYYYYMMDD();
         return `${id}_${date}`;
     }
 
@@ -43,7 +52,7 @@ export class RateLimiter {
             }
             
             // Cleanup old entries (older than today)
-            const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
+            const today = this.getTodayVnYYYYMMDD();
             const cleaned: Record<string, number> = {};
             let hasOldEntries = false;
             

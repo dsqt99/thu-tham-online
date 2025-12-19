@@ -92,6 +92,7 @@ app.post('/upload', upload.fields([
             return res.json({ success: false, message: 'Thiếu file upload' });
         }
 
+        const prompt = req.body.prompt || '';
         const roomFile = files['room'][0];
         const rugFile = files['rug'][0];
 
@@ -118,6 +119,7 @@ app.post('/upload', upload.fields([
 
         // Generate image
         const result = await visualizer.generate(
+            prompt, // prompt
             roomFile.path,
             rugFile.path,
             roomFile.originalname,

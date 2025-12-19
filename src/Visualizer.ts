@@ -15,9 +15,9 @@ export class Visualizer {
         }
     }
 
-    public async generate(roomPath: string, rugPath: string, roomName: string, rugName: string): Promise<{ image?: string; error?: string }> {
+    public async generate(prompt: string, roomPath: string, rugPath: string, roomName: string, rugName: string): Promise<{ image?: string; error?: string }> {
         try {
-            const imgBase64 = await this.callApi(roomPath, rugPath);
+            const imgBase64 = await this.callApi(prompt, roomPath, rugPath);
             
             // Xóa file tạm
             try {
@@ -40,13 +40,14 @@ export class Visualizer {
         }
     }
 
-    private async callApi(roomFile: string, rugFile: string): Promise<string> {
+    private async callApi(prompt: string, roomFile: string, rugFile: string): Promise<string> {
         const apiUrl = process.env.API_GEN_IMAGE_URL || "https://continew-ai.app.n8n.cloud/webhook/thu-tham-online";
 
         return new Promise((resolve, reject) => {
             const form = new FormData();
             
-            form.append('prompt', `## NHIỆM VỤ: Chỉnh sửa ảnh cục bộ (Local Editing)
+            if (!prompt) {
+                prompt = `## NHIỆM VỤ: Chỉnh sửa ảnh cục bộ (Local Editing)
                 ## INPUT DỮ LIỆU:
                 - Ảnh 1 (Phòng): Đóng vai trò [GEOMETRY_REFERENCE]. Giữ nguyên tuyệt đối 100% phối cảnh, vị trí đồ đạc, ánh sáng và cấu trúc tường.
                 - Ảnh 2 (Thảm): Đóng vai trò [MATERIAL_REFERENCE]. Lấy họa tiết và màu sắc của thảm này để thay thế sàn nhà trong Ảnh 1.
@@ -60,8 +61,10 @@ export class Visualizer {
                 ## RÀNG BUỘC (CONSTRAINTS):
                 - Tuyệt đối KHÔNG thay đổi hình dáng hay vị trí của bất kỳ đồ nội thất nào.
                 - KHÔNG thay đổi góc camera.
-                - Độ phân giải đầu ra: Giữ nguyên như Ảnh 1.`);
-            
+                - Độ phân giải đầu ra: Giữ nguyên như Ảnh 1.`;
+            }
+            form.append('prompt', prompt);
+
             const roomStream = fs.createReadStream(roomFile);
             const rugStream = fs.createReadStream(rugFile);
             
@@ -103,12 +106,17 @@ export class Visualizer {
 
                     try {
                         const json = JSON.parse(data);
-                        if (!json || !json.image_base64) {
-                            reject(new Error(`API không trả image hợp lệ: ${data}`));
+                        const imageBase64 = this.extractImageBase64(json);
+                        const summary = this.summarizeApiResponse(json, imageBase64);
+
+                        if (!imageBase64) {
+                            reject(new Error(`API không trả image hợp lệ: ${JSON.stringify(summary)} — Raw: ${data}`));
                             return;
                         }
-                        resolve(json.image_base64);
-                    } catch (error) {
+
+                        resolve(imageBase64);
+                    } catch (error: any) {
+                        console.error('JSON Parse Error:', error);
                         reject(new Error(`Lỗi parse JSON: ${data}`));
                     }
                 });
@@ -139,5 +147,55 @@ export class Visualizer {
         };
         return mimeTypes[ext] || 'application/octet-stream';
     }
-}
 
+    private extractImageBase64(payload: any): string | undefined {
+        if (payload == null) return undefined;
+
+        if (Array.isArray(payload)) {
+            for (const item of payload) {
+                const extracted = this.extractImageBase64(item);
+                if (extracted) return extracted;
+            }
+            return undefined;
+        }
+
+        const candidates = [
+            payload?.data,
+            payload?.image,
+            payload?.json?.data,
+            payload?.json?.image
+        ];
+
+        for (const candidate of candidates) {
+            if (typeof candidate !== 'string') continue;
+            const trimmed = candidate.trim();
+            if (!trimmed) continue;
+
+            if (trimmed.startsWith('data:image') && trimmed.includes(',')) {
+                const [, base64Part] = trimmed.split(',', 2);
+                const base64Trimmed = (base64Part || '').trim();
+                if (base64Trimmed) return base64Trimmed;
+                continue;
+            }
+
+            return trimmed;
+        }
+
+        return undefined;
+    }
+
+    private summarizeApiResponse(payload: any, extractedImageBase64?: string) {
+        const type = Array.isArray(payload) ? 'array' : payload === null ? 'null' : typeof payload;
+        const summary: any = { type };
+
+        if (Array.isArray(payload)) {
+            summary.length = payload.length;
+            summary.firstItemKeys = payload[0] && typeof payload[0] === 'object' ? Object.keys(payload[0]) : undefined;
+        } else if (payload && typeof payload === 'object') {
+            summary.keys = Object.keys(payload);
+        }
+
+        summary.extractedImageLength = extractedImageBase64 ? extractedImageBase64.length : 0;
+        return summary;
+    }
+}
