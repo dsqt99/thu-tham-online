@@ -13,8 +13,6 @@ services:
       - ./upload:/app/upload:ro
       - ./images:/app/images
       - ./storage:/app/storage
-      - /app/node_modules
-      - /app/dist
     env_file:
       - ./.env
     environment:
