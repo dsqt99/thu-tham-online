@@ -1,50 +1,134 @@
-# Tham VPS - TypeScript Version
+# AI Trải Thảm (tham-vps)
 
-Ứng dụng AI để trải thảm vào phòng của bạn.
+Ứng dụng web chọn thảm + ảnh phòng và gọi AI để “trải thảm vào phòng”.
 
-## Cài đặt
+**Tính năng**
+- Giao diện chat chọn `phòng` → `phong cách` → `tông màu` → chọn `thảm` → chọn `ảnh phòng` → tạo ảnh.
+- Chọn ảnh từ thư viện hoặc tự upload (hỗ trợ JPG/PNG/WEBP; phòng hỗ trợ thêm HEIC).
+- Popup hiển thị kết quả, tải ảnh về máy, tạo lại ảnh khác.
+- Giới hạn số lượt tạo ảnh theo ngày (mặc định `3`).
+- Admin Upload Center (`/admin`) để upload file dữ liệu và tải ảnh về server.
+
+## Cấu hình
+
+Tạo file `.env` (hoặc chỉnh `.env` có sẵn):
+
+```env
+# Rate limit
+MAX_RATE_LIMIT=3
+RATE_LIMIT_MODE=ip
+
+# API tạo ảnh
+API_GEN_IMAGE_URL=https://<your-webhook>
+
+# Admin Upload Center account
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=<your-strong-password>
+```
+
+## Chạy local
 
 ```bash
 npm install
-```
-
-## Chạy Development
-
-```bash
 npm run dev
 ```
 
-## Build
+Mở `http://localhost:3000/`.
+
+## Build & chạy production (Node)
 
 ```bash
+npm install
 npm run build
-```
-
-## Chạy Production
-
-```bash
 npm start
 ```
 
-## Docker
+## Deploy bằng Docker
 
 ```bash
-docker-compose up -d
+docker-compose up -d --build
 ```
 
-## Cấu trúc
+- App chạy tại `http://<server>:3000/`.
+- `docker-compose.yml` mount `./storage` để giữ dữ liệu (CSV/options/usage).
 
-- `src/` - Source code TypeScript
-  - `server.ts` - Express server (thay thế PHP)
-  - `RateLimiter.ts` - Giới hạn số lần sử dụng
-  - `Visualizer.ts` - Gọi API tạo ảnh
-- `public/` - Frontend files (HTML, CSS, JS)
-- `storage/` - Lưu trữ files và usage data
+## Deploy sau reverse proxy (Nginx)
 
-## Luồng hoạt động
+Repo có sẵn file mẫu `nginx.conf` để proxy vào container/app port `3000`.
+- Nếu chạy sau proxy, nên set `TRUST_PROXY=1` (đã có trong `docker-compose.yml`) để lấy IP thật qua `X-Forwarded-For`.
 
-1. User upload ảnh phòng và ảnh thảm
-2. Server kiểm tra rate limit (3 lần/ngày)
-3. Gọi API n8n để tạo ảnh
-4. Trả về kết quả base64
+## Hướng dẫn sử dụng web
+
+1. Chọn `Loại phòng`, `Phong cách`, `Tông màu`.
+2. Chọn thảm:
+   - `Chọn thảm có sẵn` để mở danh sách thảm.
+   - Hoặc `Tải ảnh thảm lên`.
+3. Chọn ảnh phòng:
+   - Danh sách phòng tự cập nhật theo bộ lọc (không cần bấm “Chọn ảnh phòng có sẵn”).
+   - Hoặc `Tải ảnh phòng lên`.
+4. Bấm `✨ Click để tạo ảnh` để gọi API tạo ảnh.
+5. Kết quả hiển thị dạng popup: tải ảnh / đóng popup / tạo lại.
+
+## Giới hạn lượt tạo ảnh
+
+- Chỉ khi bấm tạo ảnh và server trả kết quả thành công mới tính “+1 lượt”.
+- Mặc định giới hạn `MAX_RATE_LIMIT=3` lượt/ngày.
+- `RATE_LIMIT_MODE`:
+  - `ip`: tính theo IP.
+  - `cookie`: tính theo cookie.
+  - `both`: lấy max giữa 2 cách.
+
+## Admin Upload Center
+
+### Đăng nhập
+
+- Truy cập `http://<host>/admin`.
+- Đăng nhập bằng `ADMIN_USERNAME` và `ADMIN_PASSWORD` trong `.env`.
+- API upload được bảo vệ (chưa đăng nhập sẽ trả `401`).
+
+### Upload dữ liệu Rooms
+
+Endpoint: `POST /api/admin/upload-rooms`
+
+File Excel cần có các cột:
+- `id`: định danh (nên unique).
+- `room`: tên phòng (tuỳ ý).
+- `style`: phong cách (tuỳ ý).
+- `tone`: tông màu (tuỳ ý).
+- `link`: URL ảnh phòng (nên là link ảnh trực tiếp có đuôi `.jpg/.png/.webp`).
+
+Khi upload rooms:
+- Xoá sạch toàn bộ ảnh cũ trong `images/rooms/` rồi tải ảnh mới vào lại.
+- Ghi `storage/rooms.csv`.
+- Cập nhật `storage/options.json` để UI dùng làm danh sách `room/style/tone`.
+
+### Upload dữ liệu Rugs
+
+Endpoint: `POST /api/admin/upload-rugs`
+
+File Excel cần có các cột:
+- `id`: định danh.
+- `name`: tên hiển thị.
+- `code`: mã thảm (khuyến nghị unique).
+- `link`: URL ảnh thảm (nên là link ảnh trực tiếp có đuôi `.jpg/.png/.webp`).
+
+Khi upload rugs:
+- Xoá sạch toàn bộ ảnh cũ trong `images/rugs/` rồi tải ảnh mới vào lại.
+- Ghi `storage/rugs.csv`.
+
+## Lưu trữ dữ liệu (lưu gì ở đâu)
+
+- `images/rooms/`: ảnh phòng đã tải về từ Admin Upload (mỗi lần upload rooms sẽ xoá và tải lại).
+- `images/rugs/`: ảnh thảm đã tải về từ Admin Upload (mỗi lần upload rugs sẽ xoá và tải lại).
+- `storage/rooms.csv`: dữ liệu rooms + đường dẫn ảnh.
+- `storage/rugs.csv`: dữ liệu rugs + đường dẫn ảnh.
+- `storage/options.json`: danh sách `rooms/styles/tones` hiển thị ở UI.
+- `storage/usage.json`: bộ đếm giới hạn lượt tạo ảnh theo ngày.
+- `storage/temp/`: file upload tạm khi user tạo ảnh.
+
+## Rooms / Style / Tone có thể điền bất kỳ
+
+- `room`, `style`, `tone` trong file rooms có thể là chuỗi bất kỳ.
+- Hệ thống sẽ normalize để lọc (bỏ dấu, viết thường, thay khoảng trắng bằng `-`).
+- Để thêm lựa chọn mới cho UI, chỉ cần thêm giá trị mới vào file rooms và upload lại (options sẽ tự cập nhật).
 

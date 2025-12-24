@@ -48,6 +48,9 @@ RUN echo "=== Runtime: Checking dist ===" && \
 # Copy public files
 COPY public ./public
 
+# Copy admin upload center static files
+COPY upload ./upload
+
 # Copy images directory
 COPY images ./images
 

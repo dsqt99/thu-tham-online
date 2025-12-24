@@ -10,6 +10,7 @@ services:
     volumes:
       # Chỉ mount các thư mục cần thiết, không mount toàn bộ để tránh ghi đè dist
       - ./public:/app/public:ro
+      - ./upload:/app/upload:ro
       - ./images:/app/images:ro
       - ./storage:/app/storage
       - /app/node_modules
