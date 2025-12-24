@@ -23,14 +23,44 @@ export class AdminController {
         fs.mkdirSync(target, { recursive: true });
     }
 
+    private getExtensionFromUrl(url: string): string | undefined {
+        try {
+            const u = new URL(url);
+            const ext = path.extname(u.pathname || '').toLowerCase();
+            if (!ext) return undefined;
+            if (ext === '.jpeg') return '.jpg';
+            if (ext === '.jpg' || ext === '.png' || ext === '.webp') return ext;
+            return undefined;
+        } catch {
+            const ext = path.extname(url || '').toLowerCase();
+            if (!ext) return undefined;
+            if (ext === '.jpeg') return '.jpg';
+            if (ext === '.jpg' || ext === '.png' || ext === '.webp') return ext;
+            return undefined;
+        }
+    }
+
+    private getExtensionFromContentType(contentType: string | undefined): string | undefined {
+        const ct = String(contentType || '').toLowerCase();
+        if (!ct) return undefined;
+        if (ct.includes('image/jpeg')) return '.jpg';
+        if (ct.includes('image/png')) return '.png';
+        if (ct.includes('image/webp')) return '.webp';
+        return undefined;
+    }
+
     // Helper to download image
-    private async downloadImage(url: string, destPath: string): Promise<boolean> {
+    private async downloadImage(url: string, destPathBase: string): Promise<{ ok: boolean; destPath?: string; ext?: string }> {
         try {
             const response = await axios({
                 url,
                 method: 'GET',
-                responseType: 'stream'
+                responseType: 'stream',
+                validateStatus: (status) => status >= 200 && status < 400
             });
+
+            const ext = this.getExtensionFromUrl(url) || this.getExtensionFromContentType(response.headers?.['content-type']) || '.jpg';
+            const destPath = `${destPathBase}${ext}`;
 
             const dir = path.dirname(destPath);
             if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
@@ -39,12 +69,12 @@ export class AdminController {
             response.data.pipe(writer);
 
             return new Promise((resolve, reject) => {
-                writer.on('finish', () => resolve(true));
+                writer.on('finish', () => resolve({ ok: true, destPath, ext }));
                 writer.on('error', reject);
             });
         } catch (error) {
             console.error(`Failed to download ${url}:`, error);
-            return false;
+            return { ok: false };
         }
     }
 
@@ -76,16 +106,15 @@ export class AdminController {
                 if (!link) continue;
 
                 // Create filename by id
-                const filename = `${id}`;
-                // Folder structure: images/rooms/{filename}
-                // normalize room name for folder
-                const relativePath = `/images/rooms/${filename}`;
-                const localPath = path.join(this.imagesDir, 'rooms', filename);
+                const filenameBase = `${id}`;
+                const localPathBase = path.join(this.imagesDir, 'rooms', filenameBase);
 
                 // Download image
-                await this.downloadImage(link, localPath);
+                const dl = await this.downloadImage(link, localPathBase);
+                if (!dl.ok || !dl.ext) continue;
 
                 // Add to CSV
+                const relativePath = `/images/rooms/${filenameBase}${dl.ext}`;
                 csvLines.push(`${id},${room || ''},${style || ''},${tone || ''},${relativePath}`);
                 count++;
             }
@@ -133,13 +162,14 @@ export class AdminController {
                 const { id, name, code, link } = row;
                 if (!link) continue;
 
-                const filename = `${code || id}`; // Use code as filename if available
-                const relativePath = `/images/rugs/${filename}`;
-                const localPath = path.join(this.imagesDir, 'rugs', filename);
+                const filenameBase = `${code || id}`;
+                const localPathBase = path.join(this.imagesDir, 'rugs', filenameBase);
 
                 // Download
-                await this.downloadImage(link, localPath);
+                const dl = await this.downloadImage(link, localPathBase);
+                if (!dl.ok || !dl.ext) continue;
 
+                const relativePath = `/images/rugs/${filenameBase}${dl.ext}`;
                 csvLines.push(`${id},${name || ''},${code || ''},${relativePath}`);
                 count++;
             }
