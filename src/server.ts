@@ -4,8 +4,10 @@ import multer from 'multer';
 import cookieParser from 'cookie-parser';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as crypto from 'crypto';
 import { RateLimiter } from './RateLimiter';
 import { Visualizer } from './Visualizer';
+import { AdminController } from './AdminController';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -67,6 +69,101 @@ const upload = multer({
 const maxRateLimit = parseInt(process.env.MAX_RATE_LIMIT || '3', 10);
 const limiter = new RateLimiter(undefined, maxRateLimit);
 const visualizer = new Visualizer();
+const adminController = new AdminController();
+
+const adminUsername = process.env.ADMIN_USERNAME || '';
+const adminPassword = process.env.ADMIN_PASSWORD || '';
+const adminAuthCookieName = 'tv_admin';
+const adminAuthMaxAgeMs = 7 * 24 * 60 * 60 * 1000;
+
+function safeEqual(a: string, b: string): boolean {
+    const aBuf = Buffer.from(a);
+    const bBuf = Buffer.from(b);
+    if (aBuf.length !== bBuf.length) return false;
+    return crypto.timingSafeEqual(aBuf, bBuf);
+}
+
+function signAdminToken(payloadB64Url: string): string {
+    return crypto.createHmac('sha256', adminPassword || 'missing_admin_password').update(payloadB64Url).digest('base64url');
+}
+
+function createAdminToken(username: string): string {
+    const payload = { u: username, iat: Date.now() };
+    const payloadB64Url = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
+    const sig = signAdminToken(payloadB64Url);
+    return `${payloadB64Url}.${sig}`;
+}
+
+function verifyAdminToken(token: string | undefined): { ok: boolean; username?: string } {
+    if (!token) return { ok: false };
+    const parts = String(token).split('.');
+    if (parts.length !== 2) return { ok: false };
+    const [payloadB64Url, sig] = parts;
+    const expectedSig = signAdminToken(payloadB64Url);
+    if (!safeEqual(sig, expectedSig)) return { ok: false };
+    try {
+        const raw = Buffer.from(payloadB64Url, 'base64url').toString('utf8');
+        const payload = JSON.parse(raw);
+        if (!payload || typeof payload !== 'object') return { ok: false };
+        const username = String(payload.u || '');
+        const iat = Number(payload.iat || 0);
+        if (!username) return { ok: false };
+        if (!Number.isFinite(iat) || iat <= 0) return { ok: false };
+        if (Date.now() - iat > adminAuthMaxAgeMs) return { ok: false };
+        return { ok: true, username };
+    } catch {
+        return { ok: false };
+    }
+}
+
+function adminAuthMiddleware(req: Request, res: Response, next: any) {
+    const token = (req.cookies && (req.cookies as any)[adminAuthCookieName]) as string | undefined;
+    const verified = verifyAdminToken(token);
+    if (!verified.ok) {
+        return res.status(401).json({ success: false, code: 'unauthorized', message: 'Unauthorized' });
+    }
+    (req as any).adminUser = verified.username;
+    next();
+}
+
+// Admin Routes
+app.post('/api/admin/login', (req: Request, res: Response) => {
+    const { username, password } = (req.body || {}) as any;
+    if (!adminUsername || !adminPassword) {
+        return res.status(500).json({ success: false, message: 'Admin credentials not configured' });
+    }
+    const u = String(username || '');
+    const p = String(password || '');
+    if (!safeEqual(u, adminUsername) || !safeEqual(p, adminPassword)) {
+        return res.status(401).json({ success: false, message: 'Sai username hoặc password' });
+    }
+    const token = createAdminToken(u);
+    res.cookie(adminAuthCookieName, token, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        maxAge: adminAuthMaxAgeMs
+    });
+    return res.json({ success: true, username: u });
+});
+
+app.post('/api/admin/logout', (req: Request, res: Response) => {
+    res.clearCookie(adminAuthCookieName, { httpOnly: true, secure: false, sameSite: 'lax' });
+    return res.json({ success: true });
+});
+
+app.get('/api/admin/me', (req: Request, res: Response) => {
+    const token = (req.cookies && (req.cookies as any)[adminAuthCookieName]) as string | undefined;
+    const verified = verifyAdminToken(token);
+    if (!verified.ok) {
+        return res.status(401).json({ success: false, code: 'unauthorized' });
+    }
+    return res.json({ success: true, username: verified.username });
+});
+
+app.post('/api/admin/upload-rooms', adminAuthMiddleware, upload.single('file'), adminController.uploadRooms);
+app.post('/api/admin/upload-rugs', adminAuthMiddleware, upload.single('file'), adminController.uploadRugs);
+app.get('/api/options', adminController.getOptions);
 
 app.post('/upload', upload.fields([
     { name: 'room', maxCount: 1 },
@@ -184,6 +281,54 @@ app.post('/upload', upload.fields([
 // API: Lấy danh sách ảnh thảm
 app.get('/api/rugs', (req: Request, res: Response) => {
     try {
+        const csvPath = path.join(__dirname, '../storage/rugs.csv');
+        if (fs.existsSync(csvPath)) {
+            const content = fs.readFileSync(csvPath, 'utf-8');
+            const lines = content.split('\n').filter(line => line.trim() !== '');
+            // Skip header
+            const dataLines = lines.slice(1);
+            
+            const images = dataLines.map(line => {
+                const parts = line.split(',');
+                if (parts.length >= 4) {
+                    const id = parts[0];
+                    const name = parts[1];
+                    const code = parts[2];
+                    const url = parts[3].trim();
+                    
+                    if (!url) return null;
+
+                    // Verify file existence
+                    let localPath = '';
+                    if (url.startsWith('/images/')) {
+                         // Resolve absolute path to images folder
+                         const imagesDir = path.resolve(__dirname, '../images');
+                         // Remove /images/ prefix to get relative path inside imagesDir
+                         const relativePath = url.replace(/^\/images\//, ''); 
+                         localPath = path.join(imagesDir, relativePath);
+                    }
+                    
+                    if (localPath && !fs.existsSync(localPath)) {
+                         console.warn(`[Missing File] URL: ${url} -> Path: ${localPath}`);
+                         // return null; // Keep it commented unless we want to hide it
+                    } else {
+                         // console.log(`[Found File] URL: ${url}`);
+                    }
+
+                    return {
+                        filename: name || code || path.basename(url),
+                        url: url,
+                        name: name,
+                        code: code
+                    };
+                }
+                return null;
+            }).filter(item => item !== null);
+
+            return res.json({ success: true, images });
+        }
+
+        // Fallback to directory scan if CSV not found
         const rugsDir = path.join(__dirname, '../images/rugs');
         if (!fs.existsSync(rugsDir)) {
             return res.json({ success: true, images: [] });
@@ -200,17 +345,77 @@ app.get('/api/rugs', (req: Request, res: Response) => {
     }
 });
 
+// Helper to normalize string for comparison
+function normalizeString(str: string): string {
+    if (!str) return '';
+    return str.normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w\-]+/g, '');
+}
+
 // API: Lấy danh sách ảnh phòng với filter
 app.get('/api/rooms', (req: Request, res: Response) => {
     try {
+        const roomType = req.query.roomType as string;
+        const color = req.query.color as string;
+        const style = req.query.style as string;
+
+        // Try reading from CSV first
+        const csvPath = path.join(__dirname, '../storage/rooms.csv');
+        if (fs.existsSync(csvPath)) {
+            const content = fs.readFileSync(csvPath, 'utf-8');
+            const lines = content.split('\n').filter(line => line.trim() !== '');
+            const dataLines = lines.slice(1);
+
+            let images = dataLines.map(line => {
+                const parts = line.split(',');
+                if (parts.length >= 5) {
+                    // id,room,style,tone,path
+                    const id = parts[0];
+                    const room = parts[1];
+                    const rowStyle = parts[2];
+                    const tone = parts[3];
+                    const url = parts[4].trim();
+
+                    if (!url) return null;
+
+                    return {
+                        filename: path.basename(url),
+                        url: url,
+                        roomType: normalizeString(room),
+                        style: normalizeString(rowStyle),
+                        color: normalizeString(tone),
+                        // Original values for reference
+                        _room: room,
+                        _style: rowStyle,
+                        _tone: tone
+                    };
+                }
+                return null;
+            }).filter(item => item !== null) as any[];
+
+            // Filter
+            if (roomType) {
+                images = images.filter(img => img.roomType === normalizeString(roomType));
+            }
+            if (style) {
+                images = images.filter(img => img.style === normalizeString(style));
+            }
+            if (color) {
+                // Tone maps to color
+                images = images.filter(img => img.color === normalizeString(color));
+            }
+
+            return res.json({ success: true, images });
+        }
+
+        // Fallback to directory scan
         const roomsDir = path.join(__dirname, '../images/rooms');
         if (!fs.existsSync(roomsDir)) {
             return res.json({ success: true, images: [] });
         }
-
-        const roomType = req.query.roomType as string;
-        const color = req.query.color as string;
-        const style = req.query.style as string;
 
         let allFiles: Array<{ filename: string; url: string; roomType: string; color?: string; style?: string }> = [];
 
@@ -276,7 +481,11 @@ app.get('/api/rooms', (req: Request, res: Response) => {
 
 // Serve static files AFTER routes (để routes được ưu tiên)
 app.use(express.static(path.join(__dirname, '../public')));
-app.use('/images', express.static(path.join(__dirname, '../images')));
+app.use('/images', (req, res, next) => {
+    // console.log(`[Image Request] ${req.method} ${req.url}`);
+    next();
+}, express.static(path.join(__dirname, '../images')));
+app.use('/admin', express.static(path.join(__dirname, '../upload')));
 
 // Cleanup old temp files function
 function cleanupOldTempFiles() {

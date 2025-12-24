@@ -26,6 +26,7 @@
                 <div class="chatbot-info">
                     <h3>Nhân viên tư vấn</h3>
                     <span class="chatbot-status">Đang trực tuyến</span>
+                    <div class="chatbot-note">Quý khách đang dùng AiCarpet của Thảm Hán Long, quý khách có 3 lần tự thiết kế không gian nhà mình. Chúc quý khách hàng chọn được mẫu thảm ưng ý!</div>
                 </div>
             </div>
 
@@ -35,41 +36,48 @@
 
             <!-- Step 1: Chọn loại phòng -->
             <div id="step-room-type" class="step-container" style="display: none;">
-                <div class="options-grid">
-                    <button class="option-btn" data-value="phong-khach">Phòng khách</button>
-                    <button class="option-btn" data-value="phong-ngu">Phòng ngủ</button>
-                    <button class="option-btn" data-value="phong-lam-viec">Phòng làm việc</button>
-                    <button class="option-btn" data-value="phong-bep">Phòng bếp</button>
+                <div class="options-grid" id="options-room-type">
+                    <!-- Dynamic Content -->
                 </div>
             </div>
 
             <!-- Step 2: Chọn phong cách -->
             <div id="step-style" class="step-container" style="display: none;">
-                <div class="options-grid">
-                    <button class="option-btn" data-value="hien-dai">Hiện đại</button>
-                    <button class="option-btn" data-value="co-dien">Cổ điển</button>
-                    <button class="option-btn" data-value="toi-gian">Tối giản</button>
-                    <button class="option-btn" data-value="scandinavian">Scandinavian</button>
+                <div class="options-grid" id="options-style">
+                    <!-- Dynamic Content -->
                 </div>
             </div>
 
             <!-- Step 3: Chọn tông màu -->
             <div id="step-color" class="step-container" style="display: none;">
-                <div class="options-grid">
-                    <button class="option-btn" data-value="trang">Trắng</button>
-                    <button class="option-btn" data-value="xam">Xám</button>
-                    <button class="option-btn" data-value="nau">Nâu</button>
-                    <button class="option-btn" data-value="xanh">Xanh</button>
-                    <button class="option-btn" data-value="hong">Hồng</button>
-                    <button class="option-btn" data-value="khac">Khác</button>
+                <div class="options-grid" id="options-tone">
+                    <!-- Dynamic Content -->
                 </div>
             </div>
 
             <!-- Step 4: Danh sách thảm -->
             <div id="step-rugs" class="step-container" style="display: none;">
-                <div class="image-scroll-container">
+                <div class="room-choice-buttons">
+                    <button id="btn-choose-rug-sample" class="choice-btn">Chọn thảm có sẵn</button>
+                    <button id="btn-upload-rug" class="choice-btn">Tải ảnh thảm lên</button>
+                </div>
+
+                <div id="rugs-list-container" class="image-scroll-container" style="display: none;">
                     <div id="rugs-list" class="image-scroll-list">
                         <!-- Ảnh thảm sẽ được load bằng JavaScript -->
+                    </div>
+                </div>
+
+                <div id="upload-rug-container" class="upload-container" style="display: none;">
+                    <div class="upload-zone">
+                        <input type="file" id="rug-file-input" accept="image/*" style="display: none;">
+                        <label for="rug-file-input" class="upload-label">
+                            <span>📤 Tải ảnh thảm lên</span>
+                            <small>Tối đa 5 MB – JPG/PNG/WEBP/HEIC</small>
+                        </label>
+                    </div>
+                    <div id="rug-preview" class="preview-image" style="display: none;">
+                        <img id="preview-rug-img" src="" alt="Preview">
                     </div>
                 </div>
             </div>
@@ -106,7 +114,7 @@
             <!-- Step 6: Nút tạo ảnh -->
             <div id="step-generate" class="step-container" style="display: none;">
                 <button id="btn-generate" class="generate-btn">
-                    <span id="btn-text">✨ Tạo ảnh AI</span>
+                    <span id="btn-text">✨ Click để tạo ảnh</span>
                     <span id="btn-spinner" class="spinner" style="display: none;"></span>
                 </button>
                 <div id="progress-container" class="progress-container" style="display: none;">
@@ -120,15 +128,20 @@
 
         <!-- Kết quả -->
         <div id="result-container" class="result-container" style="display: none;">
-            <h2>Kết quả</h2>
-            <div class="result-image-box">
-                <img id="result-image" src="" alt="Kết quả">
+            <div class="result-modal">
+                <div class="result-header">
+                    <h2>Kết quả</h2>
+                    <button id="result-close" class="result-close" aria-label="Đóng">&times;</button>
+                </div>
+                <div class="result-image-box">
+                    <img id="result-image" src="" alt="Kết quả">
+                </div>
+                <div class="result-actions">
+                    <a id="download-btn" class="download-btn" download="tham_result.jpg">📥 Tải ảnh về máy</a>
+                    <button id="reset-btn" class="reset-btn">🔄 Tạo lại ảnh khác</button>
+                </div>
+                <div id="status-message" class="status-message"></div>
             </div>
-            <div class="result-actions">
-                <a id="download-btn" class="download-btn" download="tham_result.jpg">📥 Tải ảnh về máy</a>
-                <button id="reset-btn" class="reset-btn">🔄 Tạo lại ảnh khác</button>
-            </div>
-            <div id="status-message" class="status-message"></div>
         </div>
     </div>
 

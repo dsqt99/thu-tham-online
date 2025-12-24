@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Upload - Thảm VPS</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1, h2 {
+            color: #8c7156;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="file"] {
+            border: 1px solid #ddd;
+            padding: 10px;
+            width: 100%;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #8c7156;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #6d5843;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid #8c7156;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+            vertical-align: middle;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>Admin Upload Center</h1>
+    
+    <div id="admin-login" class="card" style="display: none;">
+        <h2>Đăng nhập</h2>
+        <div class="form-group">
+            <label for="adminUsername">Username</label>
+            <input id="adminUsername" type="text" autocomplete="username" style="border: 1px solid #ddd; padding: 10px; width: 90%; border-radius: 4px;">
+        </div>
+        <div class="form-group">
+            <label for="adminPassword">Password</label>
+            <input id="adminPassword" type="password" autocomplete="current-password" style="border: 1px solid #ddd; padding: 10px; width: 90%; border-radius: 4px;">
+        </div>
+        <button id="adminLoginBtn" onclick="loginAdmin()">
+            Đăng nhập
+            <div id="loginLoader" class="loader"></div>
+        </button>
+        <div id="loginStatus" class="status"></div>
+    </div>
+
+    <div id="admin-content" style="display: none;">
+        <div class="card">
+            <h2>Tài khoản</h2>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                <div id="adminUserLabel"></div>
+                <button onclick="logoutAdmin()">Đăng xuất</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>1. Upload Dữ Liệu Phòng (Rooms)</h2>
+            <p>File Excel cần có các cột: <code>id</code>, <code>room</code>, <code>style</code>, <code>tone</code>, <code>link</code> (URL ảnh)</p>
+            <div class="form-group">
+                <input type="file" id="roomsFile" accept=".xlsx, .xls, .csv">
+            </div>
+            <button onclick="uploadRooms()">
+                Upload & Xử lý
+                <div id="roomsLoader" class="loader"></div>
+            </button>
+            <div id="roomsStatus" class="status"></div>
+        </div>
+
+        <div class="card">
+            <h2>2. Upload Dữ Liệu Thảm (Rugs)</h2>
+            <p>File Excel cần có các cột: <code>id</code>, <code>name</code>, <code>code</code>, <code>link</code> (URL ảnh)</p>
+            <div class="form-group">
+                <input type="file" id="rugsFile" accept=".xlsx, .xls, .csv">
+            </div>
+            <button onclick="uploadRugs()">
+                Upload & Xử lý
+                <div id="rugsLoader" class="loader"></div>
+            </button>
+            <div id="rugsStatus" class="status"></div>
+        </div>
+    </div>
+
+    <script>
+        async function checkAdmin() {
+            try {
+                const resp = await fetch('/api/admin/me', { credentials: 'same-origin' });
+                const json = await resp.json();
+                if (resp.ok && json && json.success) {
+                    setAuthed(true, json.username);
+                    return;
+                }
+            } catch (e) {}
+            setAuthed(false);
+        }
+
+        function setAuthed(authed, username) {
+            const loginCard = document.getElementById('admin-login');
+            const content = document.getElementById('admin-content');
+            const userLabel = document.getElementById('adminUserLabel');
+            if (authed) {
+                if (loginCard) loginCard.style.display = 'none';
+                if (content) content.style.display = 'block';
+                if (userLabel) userLabel.textContent = `Đang đăng nhập: ${username || ''}`;
+            } else {
+                if (content) content.style.display = 'none';
+                if (loginCard) loginCard.style.display = 'block';
+                if (userLabel) userLabel.textContent = '';
+            }
+        }
+
+        async function loginAdmin() {
+            const usernameEl = document.getElementById('adminUsername');
+            const passwordEl = document.getElementById('adminPassword');
+            const statusDiv = document.getElementById('loginStatus');
+            const loader = document.getElementById('loginLoader');
+            const btn = document.getElementById('adminLoginBtn');
+
+            const username = usernameEl ? usernameEl.value : '';
+            const password = passwordEl ? passwordEl.value : '';
+            if (!username || !password) {
+                showStatus(statusDiv, 'Vui lòng nhập username và password!', 'error');
+                return;
+            }
+
+            setLoading(btn, loader, true);
+            showStatus(statusDiv, 'Đang đăng nhập...', 'success');
+
+            try {
+                const resp = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ username, password })
+                });
+                const json = await resp.json();
+                if (resp.ok && json && json.success) {
+                    showStatus(statusDiv, 'Đăng nhập thành công!', 'success');
+                    setAuthed(true, json.username);
+                } else {
+                    showStatus(statusDiv, `Lỗi: ${json && json.message ? json.message : 'Đăng nhập thất bại'}`, 'error');
+                    setAuthed(false);
+                }
+            } catch (error) {
+                showStatus(statusDiv, `Lỗi kết nối: ${error.message}`, 'error');
+                setAuthed(false);
+            } finally {
+                setLoading(btn, loader, false);
+            }
+        }
+
+        async function logoutAdmin() {
+            try {
+                await fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' });
+            } catch (e) {}
+            setAuthed(false);
+        }
+
+        async function uploadRooms() {
+            const fileInput = document.getElementById('roomsFile');
+            const statusDiv = document.getElementById('roomsStatus');
+            const loader = document.getElementById('roomsLoader');
+            const btn = fileInput.parentElement.nextElementSibling;
+
+            if (!fileInput.files[0]) {
+                showStatus(statusDiv, 'Vui lòng chọn file!', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            setLoading(btn, loader, true);
+            showStatus(statusDiv, 'Đang xử lý... Vui lòng đợi (có thể mất vài phút nếu nhiều ảnh)', 'success');
+
+            try {
+                const response = await fetch('/api/admin/upload-rooms', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    body: formData
+                });
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showStatus(statusDiv, `Thành công! Đã thêm ${result.count} ảnh phòng.`, 'success');
+                } else if (response.status === 401) {
+                    showStatus(statusDiv, 'Vui lòng đăng nhập để upload.', 'error');
+                    setAuthed(false);
+                } else {
+                    showStatus(statusDiv, `Lỗi: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showStatus(statusDiv, `Lỗi kết nối: ${error.message}`, 'error');
+            } finally {
+                setLoading(btn, loader, false);
+            }
+        }
+
+        async function uploadRugs() {
+            const fileInput = document.getElementById('rugsFile');
+            const statusDiv = document.getElementById('rugsStatus');
+            const loader = document.getElementById('rugsLoader');
+            const btn = fileInput.parentElement.nextElementSibling;
+
+            if (!fileInput.files[0]) {
+                showStatus(statusDiv, 'Vui lòng chọn file!', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            setLoading(btn, loader, true);
+            showStatus(statusDiv, 'Đang xử lý... Vui lòng đợi (có thể mất vài phút nếu nhiều ảnh)', 'success');
+
+            try {
+                const response = await fetch('/api/admin/upload-rugs', {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    body: formData
+                });
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showStatus(statusDiv, `Thành công! Đã thêm ${result.count} ảnh thảm.`, 'success');
+                } else if (response.status === 401) {
+                    showStatus(statusDiv, 'Vui lòng đăng nhập để upload.', 'error');
+                    setAuthed(false);
+                } else {
+                    showStatus(statusDiv, `Lỗi: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showStatus(statusDiv, `Lỗi kết nối: ${error.message}`, 'error');
+            } finally {
+                setLoading(btn, loader, false);
+            }
+        }
+
+        function showStatus(element, message, type) {
+            element.textContent = message;
+            element.className = `status ${type}`;
+            element.style.display = 'block';
+        }
+
+        function setLoading(btn, loader, isLoading) {
+            btn.disabled = isLoading;
+            loader.style.display = isLoading ? 'inline-block' : 'none';
+        }
+
+        checkAdmin();
+    </script>
+</body>
+</html>

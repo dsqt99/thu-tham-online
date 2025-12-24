@@ -1,0 +1,22 @@
+{
+  "rooms": [
+    "Phòng bếp",
+    "Phòng khách",
+    "Phòng làm việc",
+    "Phòng ngủ"
+  ],
+  "styles": [
+    "Hiện đại",
+    "Scandinavian",
+    "Cổ điển",
+    "Tối giản"
+  ],
+  "tones": [
+    "Trắng",
+    "Xám",
+    "Nâu",
+    "Xanh",
+    "Hồng",
+    "Khác"
+  ]
+}
