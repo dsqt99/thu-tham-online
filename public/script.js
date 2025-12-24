@@ -158,7 +158,10 @@ function setupEventListeners() {
             state.roomType = nextValue;
             setOptionSelected('#step-room-type', btn);
             updateBotSelection('roomType', btn.textContent);
-            loadRooms();
+            const btnChooseRoomSample = document.getElementById('btn-choose-room-sample');
+            if (btnChooseRoomSample && btnChooseRoomSample.classList.contains('selected')) {
+                loadRooms();
+            }
             setTimeout(() => {
                 if (state.currentStep <= 1) {
                     showStep('style');
@@ -175,7 +178,10 @@ function setupEventListeners() {
             state.style = nextValue;
             setOptionSelected('#step-style', btn);
             updateBotSelection('style', btn.textContent);
-            loadRooms();
+            const btnChooseRoomSample = document.getElementById('btn-choose-room-sample');
+            if (btnChooseRoomSample && btnChooseRoomSample.classList.contains('selected')) {
+                loadRooms();
+            }
             setTimeout(() => {
                 if (state.currentStep <= 2) {
                     showStep('color');
@@ -192,7 +198,10 @@ function setupEventListeners() {
             state.color = nextValue;
             setOptionSelected('#step-color', btn);
             updateBotSelection('color', btn.textContent);
-            loadRooms();
+            const btnChooseRoomSample = document.getElementById('btn-choose-room-sample');
+            if (btnChooseRoomSample && btnChooseRoomSample.classList.contains('selected')) {
+                loadRooms();
+            }
             setTimeout(() => {
                 if (state.currentStep <= 3) {
                     showStep('rugs');
@@ -276,8 +285,13 @@ function setupEventListeners() {
         setTimeout(() => {
             showStep('room');
             ensureBotQuestion('room', 'Bây giờ bạn muốn chọn ảnh phòng như thế nào?');
-            const btnChooseRoomSample = document.getElementById('btn-choose-room-sample');
-            if (btnChooseRoomSample) btnChooseRoomSample.click();
+            const roomsListContainer = document.getElementById('rooms-list-container');
+            if (roomsListContainer) roomsListContainer.style.display = 'none';
+            const uploadRoomContainer = document.getElementById('upload-room-container');
+            if (uploadRoomContainer) uploadRoomContainer.style.display = 'none';
+            const roomPreview = document.getElementById('room-preview');
+            if (roomPreview) roomPreview.style.display = 'none';
+            setChoiceSelected('');
         }, 500);
     });
 
@@ -498,8 +512,13 @@ async function loadRugs() {
                     setTimeout(() => {
                         showStep('room');
                         ensureBotQuestion('room', 'Bây giờ bạn muốn chọn ảnh phòng như thế nào?');
-                        const btnChooseRoomSample = document.getElementById('btn-choose-room-sample');
-                        if (btnChooseRoomSample) btnChooseRoomSample.click();
+                        const roomsListContainer = document.getElementById('rooms-list-container');
+                        if (roomsListContainer) roomsListContainer.style.display = 'none';
+                        const uploadRoomContainer = document.getElementById('upload-room-container');
+                        if (uploadRoomContainer) uploadRoomContainer.style.display = 'none';
+                        const roomPreview = document.getElementById('room-preview');
+                        if (roomPreview) roomPreview.style.display = 'none';
+                        setChoiceSelected('');
                     }, 500);
                 });
                 rugsList.appendChild(rugDiv);

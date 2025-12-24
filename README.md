@@ -1,4 +1,4 @@
-# AI Trải Thảm (tham-vps)
+# AI Trải Thảm
 
 Ứng dụng web chọn thảm + ảnh phòng và gọi AI để “trải thảm vào phòng”.
 
@@ -64,7 +64,8 @@ Repo có sẵn file mẫu `nginx.conf` để proxy vào container/app port `3000
    - `Chọn thảm có sẵn` để mở danh sách thảm.
    - Hoặc `Tải ảnh thảm lên`.
 3. Chọn ảnh phòng:
-   - Danh sách phòng tự cập nhật theo bộ lọc (không cần bấm “Chọn ảnh phòng có sẵn”).
+   - Bấm `Chọn ảnh phòng có sẵn` để mở danh sách ảnh phòng.
+   - Khi đang ở chế độ chọn ảnh có sẵn, danh sách sẽ tự reload theo bộ lọc `room/style/tone`.
    - Hoặc `Tải ảnh phòng lên`.
 4. Bấm `✨ Click để tạo ảnh` để gọi API tạo ảnh.
 5. Kết quả hiển thị dạng popup: tải ảnh / đóng popup / tạo lại.
@@ -116,7 +117,7 @@ Khi upload rugs:
 - Xoá sạch toàn bộ ảnh cũ trong `images/rugs/` rồi tải ảnh mới vào lại.
 - Ghi `storage/rugs.csv`.
 
-## Lưu trữ dữ liệu (lưu gì ở đâu)
+## Lưu trữ dữ liệu
 
 - `images/rooms/`: ảnh phòng đã tải về từ Admin Upload (mỗi lần upload rooms sẽ xoá và tải lại).
 - `images/rugs/`: ảnh thảm đã tải về từ Admin Upload (mỗi lần upload rugs sẽ xoá và tải lại).
@@ -131,4 +132,3 @@ Khi upload rugs:
 - `room`, `style`, `tone` trong file rooms có thể là chuỗi bất kỳ.
 - Hệ thống sẽ normalize để lọc (bỏ dấu, viết thường, thay khoảng trắng bằng `-`).
 - Để thêm lựa chọn mới cho UI, chỉ cần thêm giá trị mới vào file rooms và upload lại (options sẽ tự cập nhật).
-
