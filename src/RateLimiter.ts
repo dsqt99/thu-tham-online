@@ -43,6 +43,45 @@ export class RateLimiter {
         return undefined;
     }
 
+    private normalizeIp(rawIp: string): string {
+        return String(rawIp || '')
+            .trim()
+            .replace(/^::ffff:/, '')
+            .replace(/^\[|\]$/g, '')
+            .replace(/[^a-zA-Z0-9_.:\-]/g, '') || 'anon';
+    }
+
+    private isPrivateIp(ip: string): boolean {
+        const v = this.normalizeIp(ip);
+        if (!v || v === 'anon') return true;
+        if (v === '::1' || v === 'localhost' || v === '127.0.0.1') return true;
+        if (v.startsWith('fe80:')) return true;
+        if (v.startsWith('fc') || v.startsWith('fd')) return true;
+        const m = v.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+        if (!m) return false;
+        const a = Number(m[1]);
+        const b = Number(m[2]);
+        if ([a, b, Number(m[3]), Number(m[4])].some((n) => !Number.isFinite(n) || n < 0 || n > 255)) return true;
+        if (a === 10) return true;
+        if (a === 172 && b >= 16 && b <= 31) return true;
+        if (a === 192 && b === 168) return true;
+        if (a === 127) return true;
+        if (a === 169 && b === 254) return true;
+        return false;
+    }
+
+    private pickClientIpFromForwardedFor(xForwardedFor: string): string | undefined {
+        const parts = String(xForwardedFor || '')
+            .split(',')
+            .map((p) => this.normalizeIp(p))
+            .filter((p) => p && p !== 'anon');
+        if (parts.length === 0) return undefined;
+        for (const ip of parts) {
+            if (!this.isPrivateIp(ip)) return ip;
+        }
+        return parts[0];
+    }
+
     private getIpIdentifier(req: any): string {
         const headers = req?.headers || {};
         const xRealIp = headers['x-real-ip'];
@@ -52,14 +91,13 @@ export class RateLimiter {
         if (typeof xRealIp === 'string' && xRealIp.trim()) {
             rawIp = xRealIp.trim();
         } else if (typeof xForwardedFor === 'string' && xForwardedFor.trim()) {
-            rawIp = xForwardedFor.split(',')[0]?.trim();
+            rawIp = this.pickClientIpFromForwardedFor(xForwardedFor);
         } else if (Array.isArray(xForwardedFor) && xForwardedFor.length > 0) {
-            rawIp = String(xForwardedFor[0] || '').split(',')[0]?.trim();
+            rawIp = this.pickClientIpFromForwardedFor(String(xForwardedFor[0] || ''));
         }
 
         rawIp = rawIp || req.ip || req.connection?.remoteAddress || 'anon';
-        const normalized = String(rawIp).replace(/^::ffff:/, '');
-        return normalized.replace(/[^a-zA-Z0-9_.:\-]/g, '') || 'anon';
+        return this.normalizeIp(String(rawIp));
     }
 
     private getKeys(req: any): string[] {
