@@ -161,6 +161,24 @@ app.get('/api/admin/me', (req: Request, res: Response) => {
     return res.json({ success: true, username: verified.username });
 });
 
+// Debug IP Route
+app.get('/api/debug-ip', (req: Request, res: Response) => {
+    const headers = req.headers;
+    const ip = req.ip;
+    const ips = req.ips;
+    const remoteAddress = req.connection?.remoteAddress;
+    // @ts-ignore
+    const limiterIp = limiter.getIpIdentifier(req);
+
+    res.json({
+        ip,
+        ips,
+        remoteAddress,
+        limiterIp,
+        headers
+    });
+});
+
 app.post('/api/admin/upload-rooms', adminAuthMiddleware, upload.single('file'), adminController.uploadRooms);
 app.post('/api/admin/upload-rugs', adminAuthMiddleware, upload.single('file'), adminController.uploadRugs);
 app.get('/api/options', adminController.getOptions);

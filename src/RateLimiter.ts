@@ -84,20 +84,50 @@ export class RateLimiter {
 
     private getIpIdentifier(req: any): string {
         const headers = req?.headers || {};
-        const xRealIp = headers['x-real-ip'];
-        const xForwardedFor = headers['x-forwarded-for'];
+        
+        // Danh sách các headers có thể chứa IP thực
+        const candidates: string[] = [];
 
-        let rawIp: string | undefined;
-        if (typeof xRealIp === 'string' && xRealIp.trim()) {
-            rawIp = xRealIp.trim();
-        } else if (typeof xForwardedFor === 'string' && xForwardedFor.trim()) {
-            rawIp = this.pickClientIpFromForwardedFor(xForwardedFor);
-        } else if (Array.isArray(xForwardedFor) && xForwardedFor.length > 0) {
-            rawIp = this.pickClientIpFromForwardedFor(String(xForwardedFor[0] || ''));
+        // 1. Cloudflare / CDN headers (thường tin cậy nhất nếu dùng CDN)
+        const cfIp = headers['cf-connecting-ip'] || headers['true-client-ip'];
+        if (typeof cfIp === 'string') candidates.push(cfIp);
+
+        // 2. X-Forwarded-For (Standard)
+        const xff = headers['x-forwarded-for'];
+        if (typeof xff === 'string') {
+            xff.split(',').forEach(ip => candidates.push(ip.trim()));
+        } else if (Array.isArray(xff)) {
+            xff.forEach(ip => candidates.push(String(ip).trim()));
         }
 
-        rawIp = rawIp || req.ip || req.connection?.remoteAddress || 'anon';
-        return this.normalizeIp(String(rawIp));
+        // 3. X-Real-IP (Nginx)
+        const xRealIp = headers['x-real-ip'];
+        if (typeof xRealIp === 'string') candidates.push(xRealIp.trim());
+
+        // 4. Direct socket IP
+        const remoteAddr = req.connection?.remoteAddress || req.socket?.remoteAddress || req.ip;
+        if (remoteAddr) candidates.push(String(remoteAddr).trim());
+
+        // Logic lọc: Tìm IP Public đầu tiên
+        for (const ip of candidates) {
+            const normalized = this.normalizeIp(ip);
+            // Bỏ qua nếu là IP private hoặc invalid
+            if (normalized && normalized !== 'anon' && !this.isPrivateIp(normalized)) {
+                return normalized;
+            }
+        }
+
+        // Fallback: Nếu không tìm thấy Public IP, trả về Private IP hợp lệ đầu tiên (tránh localhost nếu có thể)
+        // Ưu tiên các IP không phải là 127.0.0.1 hay ::1
+        for (const ip of candidates) {
+            const normalized = this.normalizeIp(ip);
+            if (normalized && normalized !== 'anon' && !normalized.startsWith('127.') && normalized !== '::1') {
+                return normalized;
+            }
+        }
+
+        // Last resort
+        return 'anon';
     }
 
     private getKeys(req: any): string[] {
