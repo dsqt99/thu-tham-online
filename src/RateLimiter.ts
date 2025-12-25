@@ -44,7 +44,20 @@ export class RateLimiter {
     }
 
     private getIpIdentifier(req: any): string {
-        const rawIp = req.ip || req.connection?.remoteAddress || 'anon';
+        const headers = req?.headers || {};
+        const xRealIp = headers['x-real-ip'];
+        const xForwardedFor = headers['x-forwarded-for'];
+
+        let rawIp: string | undefined;
+        if (typeof xRealIp === 'string' && xRealIp.trim()) {
+            rawIp = xRealIp.trim();
+        } else if (typeof xForwardedFor === 'string' && xForwardedFor.trim()) {
+            rawIp = xForwardedFor.split(',')[0]?.trim();
+        } else if (Array.isArray(xForwardedFor) && xForwardedFor.length > 0) {
+            rawIp = String(xForwardedFor[0] || '').split(',')[0]?.trim();
+        }
+
+        rawIp = rawIp || req.ip || req.connection?.remoteAddress || 'anon';
         const normalized = String(rawIp).replace(/^::ffff:/, '');
         return normalized.replace(/[^a-zA-Z0-9_.:\-]/g, '') || 'anon';
     }
