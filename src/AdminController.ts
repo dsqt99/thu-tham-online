@@ -231,7 +231,6 @@ export class AdminController {
                 data: { 
                     rooms: ['Phòng khách', 'Phòng ngủ', 'Phòng làm việc', 'Phòng bếp'],
                     styles: ['Hiện đại', 'Cổ điển', 'Tối giản', 'Scandinavian'],
-                    tones: ['Trắng', 'Xám', 'Nâu', 'Xanh', 'Hồng', 'Khác']
                 } 
             });
         } catch (error: any) {

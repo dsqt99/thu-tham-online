@@ -396,14 +396,14 @@ app.get('/api/rooms', (req: Request, res: Response) => {
                     id = parts[0];
                     room = parts[1];
                     rowStyle = parts[2];
-                    tone = parts[3];
+                    // tone = parts[3]; // Deprecated
                     url = parts[4].trim();
                 } else if (parts.length === 4) {
                     // New format: id,room,style,path
                     id = parts[0];
                     room = parts[1];
                     rowStyle = parts[2];
-                    tone = ''; // No tone
+                    // tone = ''; 
                     url = parts[3].trim();
                 } else {
                     return null;
@@ -416,11 +416,9 @@ app.get('/api/rooms', (req: Request, res: Response) => {
                     url: url,
                     roomType: normalizeString(room),
                     style: normalizeString(rowStyle),
-                    color: normalizeString(tone),
                     // Original values for reference
                     _room: room,
-                    _style: rowStyle,
-                    _tone: tone
+                    _style: rowStyle
                 };
             }).filter(item => item !== null) as any[];
 
@@ -430,10 +428,6 @@ app.get('/api/rooms', (req: Request, res: Response) => {
             }
             if (style) {
                 images = images.filter(img => img.style === normalizeString(style));
-            }
-            if (color) {
-                // Tone maps to color
-                images = images.filter(img => img.color === normalizeString(color));
             }
 
             return res.json({ success: true, images });
@@ -445,7 +439,7 @@ app.get('/api/rooms', (req: Request, res: Response) => {
             return res.json({ success: true, images: [] });
         }
 
-        let allFiles: Array<{ filename: string; url: string; roomType: string; color?: string; style?: string }> = [];
+        let allFiles: Array<{ filename: string; url: string; roomType: string; style?: string }> = [];
 
         // Map roomType từ frontend sang tên thư mục
         const roomTypeMap: Record<string, string> = {
@@ -494,11 +488,11 @@ app.get('/api/rooms', (req: Request, res: Response) => {
             });
         }
 
-        // Filter theo color và style nếu có (có thể mở rộng sau với metadata)
-        // Hiện tại chỉ filter theo roomType, color và style có thể dùng để filter sau
+        // Filter theo style nếu có (có thể mở rộng sau với metadata)
+        // Hiện tại chỉ filter theo roomType, style có thể dùng để filter sau
         let filteredFiles = allFiles;
         
-        // TODO: Có thể thêm logic filter theo color và style dựa vào metadata hoặc tên file
+        // TODO: Có thể thêm logic filter theo style dựa vào metadata hoặc tên file
         // Ví dụ: nếu có file metadata.json hoặc naming convention
         
         res.json({ success: true, images: filteredFiles });

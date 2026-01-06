@@ -122,7 +122,7 @@ Khi upload rugs:
 - `images/rugs/`: ảnh thảm đã tải về từ Admin Upload (mỗi lần upload rugs sẽ xoá và tải lại).
 - `storage/rooms.csv`: dữ liệu rooms + đường dẫn ảnh.
 - `storage/rugs.csv`: dữ liệu rugs + đường dẫn ảnh.
-- `storage/options.json`: danh sách `rooms/styles/tones` hiển thị ở UI.
+- `storage/options.json`: danh sách `rooms/styles` hiển thị ở UI.
 - `storage/usage.json`: bộ đếm giới hạn lượt tạo ảnh theo ngày.
 - `storage/temp/`: file upload tạm khi user tạo ảnh.
 

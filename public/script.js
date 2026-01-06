@@ -3,15 +3,14 @@ const state = {
     currentStep: 0,
     roomType: null,
     style: null,
-    color: null,
     selectedRug: null,
     uploadedRugFile: null,
     selectedRoom: null,
     uploadedRoomFile: null
 };
 
-// Steps: 0=welcome, 1=roomType, 2=style, 3=color, 4=rugs, 5=room, 6=generate
-const steps = ['welcome', 'roomType', 'style', 'color', 'rugs', 'room', 'generate'];
+// Steps: 0=welcome, 1=roomType, 2=style, 3=rugs, 4=room, 5=generate
+const steps = ['welcome', 'roomType', 'style', 'rugs', 'room', 'generate'];
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
@@ -27,7 +26,6 @@ async function fetchAndRenderOptions() {
         if (data.success && data.data) {
              renderButtons('options-room-type', data.data.rooms);
              renderButtons('options-style', data.data.styles);
-             renderButtons('options-tone', data.data.tones); // tones maps to color step
         }
     } catch (e) {
         console.error('Failed to fetch options', e);
@@ -91,7 +89,6 @@ function getStepContainerId(key) {
     const map = {
         'roomType': 'step-room-type',
         'style': 'step-style',
-        'color': 'step-color',
         'rug': 'step-rugs',
         'rugs': 'step-rugs',
         'room': 'step-room',
@@ -184,26 +181,6 @@ function setupEventListeners() {
             }
             setTimeout(() => {
                 if (state.currentStep <= 2) {
-                    showStep('color');
-                    ensureBotQuestion('color', 'Anh/chị muốn tông màu như thế nào?');
-                }
-            }, 500);
-        });
-    });
-
-    // Step 3: Tông màu
-    document.querySelectorAll('#step-color .option-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const nextValue = btn.dataset.value;
-            state.color = nextValue;
-            setOptionSelected('#step-color', btn);
-            updateBotSelection('color', btn.textContent);
-            const btnChooseRoomSample = document.getElementById('btn-choose-room-sample');
-            if (btnChooseRoomSample && btnChooseRoomSample.classList.contains('selected')) {
-                loadRooms();
-            }
-            setTimeout(() => {
-                if (state.currentStep <= 3) {
                     showStep('rugs');
                     ensureBotQuestion('rug', 'Anh/chị muốn xem các mẫu thảm phù hợp không? Dưới đây là các gợi ý:');
                     if (!state.selectedRug && !state.uploadedRugFile) {
@@ -807,7 +784,6 @@ function resetFlow() {
     state.currentStep = 0;
     state.roomType = null;
     state.style = null;
-    state.color = null;
     state.selectedRug = null;
     state.uploadedRugFile = null;
     state.selectedRoom = null;
