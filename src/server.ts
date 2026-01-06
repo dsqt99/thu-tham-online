@@ -389,21 +389,13 @@ app.get('/api/rooms', (req: Request, res: Response) => {
 
             let images = dataLines.map(line => {
                 const parts = line.split(',');
-                let id, room, rowStyle, tone, url;
+                let id, room, rowStyle, url;
 
-                if (parts.length >= 5) {
+                if (parts.length === 4) {
                     // Old format: id,room,style,tone,path
                     id = parts[0];
                     room = parts[1];
                     rowStyle = parts[2];
-                    // tone = parts[3]; // Deprecated
-                    url = parts[4].trim();
-                } else if (parts.length === 4) {
-                    // New format: id,room,style,path
-                    id = parts[0];
-                    room = parts[1];
-                    rowStyle = parts[2];
-                    // tone = ''; 
                     url = parts[3].trim();
                 } else {
                     return null;
@@ -441,52 +433,26 @@ app.get('/api/rooms', (req: Request, res: Response) => {
 
         let allFiles: Array<{ filename: string; url: string; roomType: string; style?: string }> = [];
 
-        // Map roomType từ frontend sang tên thư mục
-        const roomTypeMap: Record<string, string> = {
-            'phong-khach': 'phong-khach',
-            'phong-ngu': 'phong-ngu',
-            'phong-lam-viec': 'phong-lam-viec',
-            'phong-bep': 'phong-bep'
-        };
-
-        // Nếu có roomType, chỉ lấy từ thư mục đó
-        if (roomType && roomTypeMap[roomType]) {
-            const roomTypeDir = path.join(roomsDir, roomTypeMap[roomType]);
-            if (fs.existsSync(roomTypeDir) && fs.statSync(roomTypeDir).isDirectory()) {
-                const files = fs.readdirSync(roomTypeDir)
-                    .filter(file => /\.(jpg|jpeg|png|webp)$/i.test(file))
-                    .map(file => ({
-                        filename: file,
-                        url: `/images/rooms/${roomTypeMap[roomType]}/${file}`,
-                        roomType: roomType,
-                        // Có thể thêm color và style vào metadata sau
-                        color: color || undefined,
-                        style: style || undefined
-                    }));
-                allFiles = files;
-            }
-        } else {
-            // Nếu không có roomType, lấy tất cả từ tất cả thư mục
-            const subdirs = fs.readdirSync(roomsDir)
-                .filter(item => {
-                    const itemPath = path.join(roomsDir, item);
-                    return fs.statSync(itemPath).isDirectory();
-                });
-
-            subdirs.forEach(subdir => {
-                const subdirPath = path.join(roomsDir, subdir);
-                const files = fs.readdirSync(subdirPath)
-                    .filter(file => /\.(jpg|jpeg|png|webp)$/i.test(file))
-                    .map(file => ({
-                        filename: file,
-                        url: `/images/rooms/${subdir}/${file}`,
-                        roomType: subdir,
-                        color: color || undefined,
-                        style: style || undefined
-                    }));
-                allFiles = allFiles.concat(files);
+        // Lấy tất cả từ tất cả thư mục
+        const subdirs = fs.readdirSync(roomsDir)
+            .filter(item => {
+                const itemPath = path.join(roomsDir, item);
+                return fs.statSync(itemPath).isDirectory();
             });
-        }
+
+        subdirs.forEach(subdir => {
+            const subdirPath = path.join(roomsDir, subdir);
+            const files = fs.readdirSync(subdirPath)
+                .filter(file => /\.(jpg|jpeg|png|webp)$/i.test(file))
+                .map(file => ({
+                    filename: file,
+                    url: `/images/rooms/${subdir}/${file}`,
+                    roomType: subdir,
+                    color: color || undefined,
+                    style: style || undefined
+                }));
+            allFiles = allFiles.concat(files);
+        });
 
         // Filter theo style nếu có (có thể mở rộng sau với metadata)
         // Hiện tại chỉ filter theo roomType, style có thể dùng để filter sau

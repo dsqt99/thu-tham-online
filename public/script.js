@@ -57,7 +57,7 @@ function normalizeString(str) {
 }
 
 function startChatbot() {
-    addBotMessage('Xin chào! Em là Trang, nhân viên tư vấn của công ty Thảm Hán Long. Em sẽ giúp anh/chị chọn thảm phù hợp cho phòng của anh/chị.');
+    addBotMessage('Xin chào! Em là AiCarpet, nhân viên tư vấn của công ty Thảm Hán Long. Em sẽ giúp anh/chị chọn thảm phù hợp cho phòng của anh/chị.');
     setTimeout(() => {
         showStep('roomType');
         ensureBotQuestion('roomType', 'Anh/chị muốn đặt thảm cho loại phòng nào?');

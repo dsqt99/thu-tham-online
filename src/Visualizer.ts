@@ -66,7 +66,7 @@ export class Visualizer {
             form.append('prompt', prompt);
 
             // Construct public URLs
-            const baseUrl = 'https://thu-tham-online.aicontinew.com';
+            const baseUrl = process.env.APP_URL;
             const roomUrl = `${baseUrl}/temp/${path.basename(roomFile)}`;
             const rugUrl = `${baseUrl}/temp/${path.basename(rugFile)}`;
 

@@ -2,14 +2,15 @@
   "rooms": [
     "Phòng bếp",
     "Phòng khách",
-    "Phòng làm việc",
+    "Phòng sinh hoạt chung",
     "Phòng ngủ"
   ],
   "styles": [
-    "Hiện đại",
-    "Scandinavian",
     "Cổ điển",
-    "Tối giản"
+    "Bohemian",
+    "Tối giản",
+    "Bắc Âu",
+    "Vintage"
   ],
   "tones": []
 }
