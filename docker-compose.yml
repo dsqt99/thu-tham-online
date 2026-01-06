@@ -6,7 +6,7 @@ services:
       target: runtime
     container_name: node_app_service
     ports:
-      - "127.0.0.1:3000:3000"
+      - "3000:3000"
     volumes:
       # Chỉ mount các thư mục cần thiết
       - ./public:/app/public:ro
