@@ -1,29 +1,29 @@
-id,room,style,tone,path
-1,Phòng bếp,Hiện đại,Trắng,/images/rooms/1.jpg
-2,Phòng bếp,Scandinavian,Xám,/images/rooms/2.jpg
-3,Phòng bếp,Cổ điển,Nâu,/images/rooms/3.jpg
-4,Phòng bếp,Tối giản,Xanh,/images/rooms/4.jpg
-5,Phòng bếp,Hiện đại,Hồng,/images/rooms/5.jpg
-6,Phòng bếp,Scandinavian,Khác,/images/rooms/6.jpg
-7,Phòng bếp,Cổ điển,Trắng,/images/rooms/7.jpg
-8,Phòng khách,Tối giản,Xám,/images/rooms/8.jpg
-9,Phòng khách,Hiện đại,Nâu,/images/rooms/9.jpg
-10,Phòng khách,Scandinavian,Xanh,/images/rooms/10.jpg
-11,Phòng khách,Cổ điển,Hồng,/images/rooms/11.jpg
-12,Phòng khách,Tối giản,Khác,/images/rooms/12.jpg
-13,Phòng khách,Hiện đại,Trắng,/images/rooms/13.jpg
-14,Phòng khách,Scandinavian,Xám,/images/rooms/14.jpg
-15,Phòng khách,Cổ điển,Nâu,/images/rooms/15.jpg
-16,Phòng làm việc,Tối giản,Xanh,/images/rooms/16.jpg
-17,Phòng làm việc,Hiện đại,Hồng,/images/rooms/17.jpg
-18,Phòng làm việc,Scandinavian,Khác,/images/rooms/18.jpg
-19,Phòng làm việc,Cổ điển,Trắng,/images/rooms/19.jpg
-20,Phòng làm việc,Tối giản,Xám,/images/rooms/20.jpg
-21,Phòng làm việc,Hiện đại,Nâu,/images/rooms/21.jpg
-22,Phòng ngủ,Scandinavian,Xanh,/images/rooms/22.jpg
-23,Phòng ngủ,Cổ điển,Hồng,/images/rooms/23.jpg
-24,Phòng ngủ,Tối giản,Khác,/images/rooms/24.jpg
-25,Phòng ngủ,Hiện đại,Trắng,/images/rooms/25.jpg
-26,Phòng ngủ,Scandinavian,Xám,/images/rooms/26.jpg
-27,Phòng ngủ,Cổ điển,Nâu,/images/rooms/27.jpg
-28,Phòng ngủ,Tối giản,Xanh,/images/rooms/28.jpg
+id,room,style,path
+1,Phòng bếp,Hiện đại,/images/rooms/1.jpg
+2,Phòng bếp,Scandinavian,/images/rooms/2.jpg
+3,Phòng bếp,Cổ điển,/images/rooms/3.jpg
+4,Phòng bếp,Tối giản,/images/rooms/4.jpg
+5,Phòng bếp,Hiện đại,/images/rooms/5.jpg
+6,Phòng bếp,Scandinavian,/images/rooms/6.jpg
+7,Phòng bếp,Cổ điển,/images/rooms/7.jpg
+8,Phòng khách,Tối giản,/images/rooms/8.jpg
+9,Phòng khách,Hiện đại,/images/rooms/9.jpg
+10,Phòng khách,Scandinavian,/images/rooms/10.jpg
+11,Phòng khách,Cổ điển,/images/rooms/11.jpg
+12,Phòng khách,Tối giản,/images/rooms/12.jpg
+13,Phòng khách,Hiện đại,/images/rooms/13.jpg
+14,Phòng khách,Scandinavian,/images/rooms/14.jpg
+15,Phòng khách,Cổ điển,/images/rooms/15.jpg
+16,Phòng làm việc,Tối giản,/images/rooms/16.jpg
+17,Phòng làm việc,Hiện đại,/images/rooms/17.jpg
+18,Phòng làm việc,Scandinavian,/images/rooms/18.jpg
+19,Phòng làm việc,Cổ điển,/images/rooms/19.jpg
+20,Phòng làm việc,Tối giản,/images/rooms/20.jpg
+21,Phòng làm việc,Hiện đại,/images/rooms/21.jpg
+22,Phòng ngủ,Scandinavian,/images/rooms/22.jpg
+23,Phòng ngủ,Cổ điển,/images/rooms/23.jpg
+24,Phòng ngủ,Tối giản,/images/rooms/24.jpg
+25,Phòng ngủ,Hiện đại,/images/rooms/25.jpg
+26,Phòng ngủ,Scandinavian,/images/rooms/26.jpg
+27,Phòng ngủ,Cổ điển,/images/rooms/27.jpg
+28,Phòng ngủ,Tối giản,/images/rooms/28.jpg

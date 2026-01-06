@@ -389,29 +389,39 @@ app.get('/api/rooms', (req: Request, res: Response) => {
 
             let images = dataLines.map(line => {
                 const parts = line.split(',');
+                let id, room, rowStyle, tone, url;
+
                 if (parts.length >= 5) {
-                    // id,room,style,tone,path
-                    const id = parts[0];
-                    const room = parts[1];
-                    const rowStyle = parts[2];
-                    const tone = parts[3];
-                    const url = parts[4].trim();
-
-                    if (!url) return null;
-
-                    return {
-                        filename: path.basename(url),
-                        url: url,
-                        roomType: normalizeString(room),
-                        style: normalizeString(rowStyle),
-                        color: normalizeString(tone),
-                        // Original values for reference
-                        _room: room,
-                        _style: rowStyle,
-                        _tone: tone
-                    };
+                    // Old format: id,room,style,tone,path
+                    id = parts[0];
+                    room = parts[1];
+                    rowStyle = parts[2];
+                    tone = parts[3];
+                    url = parts[4].trim();
+                } else if (parts.length === 4) {
+                    // New format: id,room,style,path
+                    id = parts[0];
+                    room = parts[1];
+                    rowStyle = parts[2];
+                    tone = ''; // No tone
+                    url = parts[3].trim();
+                } else {
+                    return null;
                 }
-                return null;
+
+                if (!url) return null;
+
+                return {
+                    filename: path.basename(url),
+                    url: url,
+                    roomType: normalizeString(room),
+                    style: normalizeString(rowStyle),
+                    color: normalizeString(tone),
+                    // Original values for reference
+                    _room: room,
+                    _style: rowStyle,
+                    _tone: tone
+                };
             }).filter(item => item !== null) as any[];
 
             // Filter
@@ -503,6 +513,10 @@ app.use('/images', (req, res, next) => {
     // console.log(`[Image Request] ${req.method} ${req.url}`);
     next();
 }, express.static(path.join(__dirname, '../images')));
+
+// Serve temp files publicly for API processing
+app.use('/temp', express.static(path.join(__dirname, '../storage/temp')));
+
 app.use('/admin', express.static(path.join(__dirname, '../upload')));
 
 // Cleanup old temp files function

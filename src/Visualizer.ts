@@ -65,18 +65,20 @@ export class Visualizer {
             }
             form.append('prompt', prompt);
 
-            const roomStream = fs.createReadStream(roomFile);
-            const rugStream = fs.createReadStream(rugFile);
+            // Construct public URLs
+            const baseUrl = 'https://thu-tham-online.aicontinew.com';
+            const roomUrl = `${baseUrl}/temp/${path.basename(roomFile)}`;
+            const rugUrl = `${baseUrl}/temp/${path.basename(rugFile)}`;
+
+            console.log(`[Visualizer] Sending URLs to API: Room=${roomUrl}, Rug=${rugUrl}`);
+
+            // Send URLs instead of files to avoid 413 Entity Too Large
+            form.append('room_image_url', roomUrl);
+            form.append('rug_image_url', rugUrl);
             
-            form.append('room_file', roomStream, {
-                filename: path.basename(roomFile),
-                contentType: this.getMimeType(roomFile)
-            });
-            
-            form.append('rug_file', rugStream, {
-                filename: path.basename(rugFile),
-                contentType: this.getMimeType(rugFile)
-            });
+            // Keep sending file streams? No, user wants to use public links to avoid 413.
+            // But if the API expects "room_file" key with a file, sending a URL in "room_image_url" might not work unless API logic handles it.
+            // Assuming the API is updated or smart enough to handle 'room_image_url' and 'rug_image_url'.
 
             const url = new URL(apiUrl);
             const isHttps = url.protocol === 'https:';

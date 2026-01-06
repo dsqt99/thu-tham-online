@@ -95,13 +95,12 @@ File Excel cần có các cột:
 - `id`: định danh (nên unique).
 - `room`: tên phòng (tuỳ ý).
 - `style`: phong cách (tuỳ ý).
-- `tone`: tông màu (tuỳ ý).
 - `link`: URL ảnh phòng (nên là link ảnh trực tiếp có đuôi `.jpg/.png/.webp`).
 
 Khi upload rooms:
 - Xoá sạch toàn bộ ảnh cũ trong `images/rooms/` rồi tải ảnh mới vào lại.
 - Ghi `storage/rooms.csv`.
-- Cập nhật `storage/options.json` để UI dùng làm danh sách `room/style/tone`.
+- Cập nhật `storage/options.json` để UI dùng làm danh sách `room/style`.
 
 ### Upload dữ liệu Rugs
 
@@ -127,8 +126,11 @@ Khi upload rugs:
 - `storage/usage.json`: bộ đếm giới hạn lượt tạo ảnh theo ngày.
 - `storage/temp/`: file upload tạm khi user tạo ảnh.
 
-## Rooms / Style / Tone có thể điền bất kỳ
+## Rooms / Style có thể điền bất kỳ
 
-- `room`, `style`, `tone` trong file rooms có thể là chuỗi bất kỳ.
+- `room`, `style` trong file rooms có thể là chuỗi bất kỳ.
 - Hệ thống sẽ normalize để lọc (bỏ dấu, viết thường, thay khoảng trắng bằng `-`).
 - Để thêm lựa chọn mới cho UI, chỉ cần thêm giá trị mới vào file rooms và upload lại (options sẽ tự cập nhật).
+
+1. gcloud init
+2. gcloud compute ssh --zone "asia-southeast1-c" "instance-20250912-094812" --project "continew-ai-471909"

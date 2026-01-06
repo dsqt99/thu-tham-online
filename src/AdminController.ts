@@ -96,13 +96,13 @@ export class AdminController {
 
             this.clearImagesSubdir('rooms');
 
-            // CSV Header: id,room,style,tone,path
-            const csvLines = ['id,room,style,tone,path'];
+            // CSV Header: id,room,style,path
+            const csvLines = ['id,room,style,path'];
             let count = 0;
 
             for (const row of data) {
                 // Expected columns: id, room, style, tone, link
-                const { id, room, style, tone, link } = row;
+                const { id, room, style, link } = row;
                 if (!link) continue;
 
                 // Create filename by id
@@ -115,7 +115,7 @@ export class AdminController {
 
                 // Add to CSV
                 const relativePath = `/images/rooms/${filenameBase}${dl.ext}`;
-                csvLines.push(`${id},${room || ''},${style || ''},${tone || ''},${relativePath}`);
+                csvLines.push(`${id},${room || ''},${style || ''},${relativePath}`);
                 count++;
             }
 
@@ -191,18 +191,18 @@ export class AdminController {
     private updateOptionsJson(data: any[]) {
         const rooms = new Set<string>();
         const styles = new Set<string>();
-        const tones = new Set<string>();
+        // const tones = new Set<string>(); // Tone removed
 
         data.forEach(row => {
             if (row.room) rooms.add(row.room);
             if (row.style) styles.add(row.style);
-            if (row.tone) tones.add(row.tone);
+            // if (row.tone) tones.add(row.tone);
         });
 
         const options = {
             rooms: Array.from(rooms),
             styles: Array.from(styles),
-            tones: Array.from(tones)
+            tones: [] // Empty tones
         };
 
         fs.writeFileSync(path.join(this.storageDir, 'options.json'), JSON.stringify(options, null, 2));
