@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import axios from 'axios';
+import * as https from 'https';
 // @ts-ignore - form-data có thể không có type definitions đầy đủ
 import FormData from 'form-data';
 
@@ -96,6 +97,14 @@ export class Visualizer {
         const roomUrl = `${baseUrl}/temp/${path.basename(roomFile)}`;
         const rugUrl = `${baseUrl}/temp/${path.basename(rugFile)}`;
 
+        // Verify files exist locally before sending
+        if (!fs.existsSync(roomFile)) {
+            throw new Error(`Room file not found at: ${roomFile}`);
+        }
+        if (!fs.existsSync(rugFile)) {
+            throw new Error(`Rug file not found at: ${rugFile}`);
+        }
+
         console.log(`[Visualizer] Sending URLs to API: Room=${roomUrl}, Rug=${rugUrl}`);
 
         // Send URLs instead of files to avoid 413 Entity Too Large
@@ -111,10 +120,12 @@ export class Visualizer {
         });
 
         try {
+            const httpsAgent = new https.Agent({ keepAlive: true });
             const response = await axios.post(apiUrl, form, {
                 headers: {
                     ...form.getHeaders(),
                 },
+                httpsAgent,
                 timeout: 600000, // 10 minutes
                 maxBodyLength: Infinity,
                 maxContentLength: Infinity
