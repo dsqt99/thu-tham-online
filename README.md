@@ -57,6 +57,46 @@ docker-compose up -d --build
 Repo có sẵn file mẫu `nginx.conf` để proxy vào container/app port `3000`.
 - Nếu chạy sau proxy, nên set `TRUST_PROXY=1` (đã có trong `docker-compose.yml`) để lấy IP thật qua `X-Forwarded-For`.
 
+### Cấu hình Nginx chuẩn (Khuyên dùng)
+Nếu bạn cài Nginx trực tiếp trên Host (Ubuntu/CentOS), hãy tạo file cấu hình mới:
+
+1. Tạo file config:
+   ```bash
+   sudo nano /etc/nginx/sites-available/gheptham.cahy.io.vn
+   ```
+
+2. Dán nội dung sau (Thay `gheptham.cahy.io.vn` bằng domain của bạn):
+   ```nginx
+   server {
+       server_name gheptham.cahy.io.vn;
+
+       # Tăng giới hạn upload
+       client_max_body_size 20M;
+
+       location / {
+           # Dùng IP LAN của server nếu localhost bị chặn (hostname -I để lấy IP)
+           # Hoặc dùng http://localhost:3000 nếu không có vấn đề firewall
+           proxy_pass http://127.0.0.1:3000;
+           
+           proxy_http_version 1.1;
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection 'upgrade';
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+           proxy_set_header X-Forwarded-Proto $scheme;
+       }
+   }
+   ```
+
+3. Kích hoạt và cài SSL:
+   ```bash
+   sudo ln -s /etc/nginx/sites-available/gheptham.cahy.io.vn /etc/nginx/sites-enabled/
+   sudo nginx -t
+   sudo systemctl reload nginx
+   sudo certbot --nginx -d gheptham.cahy.io.vn
+   ```
+
 ## Hướng dẫn sử dụng web
 
 1. Chọn `Loại phòng`, `Phong cách`, `Tông màu`.
