@@ -54,7 +54,13 @@ export class Visualizer {
                 }
             }
             logContent += '-'.repeat(50) + '\n';
-            fs.appendFileSync(path.join(this.tempDir, 'visualizer.log'), logContent);
+            const logFile = path.join(__dirname, '../storage/api_logs.txt');
+            // Ensure directory exists
+            const logDir = path.dirname(logFile);
+            if (!fs.existsSync(logDir)) {
+                fs.mkdirSync(logDir, { recursive: true });
+            }
+            fs.appendFileSync(logFile, logContent);
         } catch (err) {
             console.error('Failed to write to log file:', err);
         }

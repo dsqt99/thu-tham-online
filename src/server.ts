@@ -478,10 +478,10 @@ app.use('/images', (req, res, next) => {
 app.use('/temp', express.static(path.join(__dirname, '../storage/temp')));
 
 // Serve log file
-app.get('/logs/api_logs.log', (req, res) => {
-    const logPath = path.join(__dirname, '../storage/api_logs.log');
+app.get('/logs/api_logs.txt', (req, res) => {
+    const logPath = path.join(__dirname, '../storage/api_logs.txt');
     if (fs.existsSync(logPath)) {
-        res.setHeader('Content-Type', 'text/plain');
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
         res.sendFile(logPath);
     } else {
         res.status(404).send('Log file not found');
