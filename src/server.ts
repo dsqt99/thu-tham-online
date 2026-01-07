@@ -477,6 +477,17 @@ app.use('/images', (req, res, next) => {
 // Serve temp files publicly for API processing
 app.use('/temp', express.static(path.join(__dirname, '../storage/temp')));
 
+// Serve log file
+app.get('/logs/api_logs.log', (req, res) => {
+    const logPath = path.join(__dirname, '../storage/api_logs.log');
+    if (fs.existsSync(logPath)) {
+        res.setHeader('Content-Type', 'text/plain');
+        res.sendFile(logPath);
+    } else {
+        res.status(404).send('Log file not found');
+    }
+});
+
 app.use('/admin', express.static(path.join(__dirname, '../upload')));
 
 // Cleanup old temp files function

@@ -40,8 +40,30 @@ export class Visualizer {
         }
     }
 
+    private log(message: string, data?: any) {
+        console.log(`[Visualizer] ${message}`, data ? JSON.stringify(data, null, 2) : '');
+        
+        try {
+            const timestamp = new Date().toISOString();
+            let logContent = `[${timestamp}] ${message}\n`;
+            if (data) {
+                try {
+                    logContent += JSON.stringify(data, null, 2) + '\n';
+                } catch (e) {
+                    logContent += `[Circular or Invalid Data]: ${String(data)}\n`;
+                }
+            }
+            logContent += '-'.repeat(50) + '\n';
+            fs.appendFileSync(path.join(this.tempDir, 'visualizer.log'), logContent);
+        } catch (err) {
+            console.error('Failed to write to log file:', err);
+        }
+    }
+
     private async callApi(prompt: string, roomFile: string, rugFile: string): Promise<string> {
         const apiUrl = process.env.API_GEN_IMAGE_URL || "https://continew-ai.app.n8n.cloud/webhook/thu-tham-online";
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        const self = this;
 
         return new Promise((resolve, reject) => {
             const form = new FormData();
@@ -76,13 +98,17 @@ export class Visualizer {
             form.append('room_image_url', roomUrl);
             form.append('rug_image_url', rugUrl);
             
-            // Keep sending file streams? No, user wants to use public links to avoid 413.
-            // But if the API expects "room_file" key with a file, sending a URL in "room_image_url" might not work unless API logic handles it.
-            // Assuming the API is updated or smart enough to handle 'room_image_url' and 'rug_image_url'.
-
             const url = new URL(apiUrl);
             const isHttps = url.protocol === 'https:';
             const client = isHttps ? https : http;
+
+            const startTime = Date.now();
+            self.log('API Request Start', {
+                url: apiUrl,
+                roomUrl,
+                rugUrl,
+                prompt: prompt ? prompt.substring(0, 100) + '...' : 'Default Prompt'
+            });
 
             const options = {
                 hostname: url.hostname,
@@ -101,36 +127,30 @@ export class Visualizer {
                 });
 
                 res.on('end', () => {
-                    if (res.statusCode !== 200) {
-                        reject(new Error(`API trả mã ${res.statusCode} — Response: ${data}`));
-                        return;
-                    }
+                    const duration = Date.now() - startTime;
+                    self.log(`API Response Received (${duration}ms)`, {
+                        statusCode: res.statusCode,
+                        bodyPreview: data.substring(0, 500) // Log first 500 chars only
+                    });
 
-                    try {
-                        const json = JSON.parse(data);
-                        const imageBase64 = this.extractImageBase64(json);
-                        const summary = this.summarizeApiResponse(json, imageBase64);
-
-                        if (!imageBase64) {
-                            reject(new Error(`API không trả image hợp lệ: ${JSON.stringify(summary)} — Raw: ${data}`));
-                            return;
+                    if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+                        try {
+                            const json = JSON.parse(data);
+                            resolve(json.output || json.image || json[0]?.output || '');
+                        } catch (e) {
+                            self.log('API JSON Parse Error', { error: String(e), data });
+                            reject(new Error('Invalid JSON response from API'));
                         }
-
-                        resolve(imageBase64);
-                    } catch (error: any) {
-                        console.error('JSON Parse Error:', error);
-                        reject(new Error(`Lỗi parse JSON: ${data}`));
+                    } else {
+                        reject(new Error(`API Error: ${res.statusCode} - ${data}`));
                     }
                 });
             });
 
             req.on('error', (error) => {
-                reject(new Error(`Request error: ${error.message}`));
-            });
-
-            req.on('timeout', () => {
-                req.destroy();
-                reject(new Error('Request timeout'));
+                const duration = Date.now() - startTime;
+                self.log(`API Request Error (${duration}ms)`, { error: error.message });
+                reject(error);
             });
 
             form.pipe(req);
