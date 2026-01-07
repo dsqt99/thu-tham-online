@@ -127,6 +127,12 @@ export class Visualizer {
             });
 
             const json = response.data;
+            const extracted = this.extractImageBase64(json);
+            if (extracted) {
+                return extracted;
+            }
+            
+            // Fallback to old manual checks if helper fails (unlikely)
             return json.output || json.image || json[0]?.output || '';
 
         } catch (error: any) {
