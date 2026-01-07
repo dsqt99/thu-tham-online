@@ -226,6 +226,9 @@ app.post('/upload', upload.fields([
         const roomFile = files['room'][0];
         const rugFile = files['rug'][0];
 
+        console.log(`[Upload] Room Path: ${roomFile.path}, Exists: ${fs.existsSync(roomFile.path)}`);
+        console.log(`[Upload] Rug Path: ${rugFile.path}, Exists: ${fs.existsSync(rugFile.path)}`);
+
         // Validate file types
         const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
         if (!allowed.includes(roomFile.mimetype) || !allowed.includes(rugFile.mimetype)) {
