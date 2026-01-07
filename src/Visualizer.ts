@@ -1,7 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as https from 'https';
-import * as http from 'http';
+import axios from 'axios';
 // @ts-ignore - form-data có thể không có type definitions đầy đủ
 import FormData from 'form-data';
 
@@ -71,96 +70,78 @@ export class Visualizer {
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         const self = this;
 
-        return new Promise((resolve, reject) => {
-            const form = new FormData();
+        const form = new FormData();
+        
+        if (!prompt) {
+            prompt = `## NHIỆM VỤ: Chỉnh sửa ảnh cục bộ (Local Editing)
+            ## INPUT DỮ LIỆU:
+            - Ảnh 1 (Phòng): Đóng vai trò [GEOMETRY_REFERENCE]. Giữ nguyên tuyệt đối 100% phối cảnh, vị trí đồ đạc, ánh sáng và cấu trúc tường.
+            - Ảnh 2 (Thảm): Đóng vai trò [MATERIAL_REFERENCE]. Lấy họa tiết và màu sắc của thảm này để thay thế sàn nhà trong Ảnh 1.
             
-            if (!prompt) {
-                prompt = `## NHIỆM VỤ: Chỉnh sửa ảnh cục bộ (Local Editing)
-                ## INPUT DỮ LIỆU:
-                - Ảnh 1 (Phòng): Đóng vai trò [GEOMETRY_REFERENCE]. Giữ nguyên tuyệt đối 100% phối cảnh, vị trí đồ đạc, ánh sáng và cấu trúc tường.
-                - Ảnh 2 (Thảm): Đóng vai trò [MATERIAL_REFERENCE]. Lấy họa tiết và màu sắc của thảm này để thay thế sàn nhà trong Ảnh 1.
-                
-                ## LỆNH THỰC THI (ACTION):
-                Thay thế bề mặt sàn nhà trong Ảnh 1 bằng chất liệu từ Ảnh 2.
-                1. [PERSPECTIVE MATCH]: Bẻ cong họa tiết thảm (Ảnh 2) để khớp hoàn hảo với điểm tụ và mặt phẳng sàn của Ảnh 1.
-                2. [OCCLUSION HANDLING]: Xác định các vật thể tiền cảnh (chân bàn, ghế, sofa). Đặt lớp thảm mới nằm DƯỚI các vật thể này. Không được vẽ đè lên đồ đạc.
-                3. [LIGHTING INTEGRATION]: Giữ nguyên bản đồ bóng đổ (shadow map) của Ảnh 1. Áp bóng đổ của bàn ghế lên mặt thảm mới một cách tự nhiên.
-                
-                ## RÀNG BUỘC (CONSTRAINTS):
-                - Tuyệt đối KHÔNG thay đổi hình dáng hay vị trí của bất kỳ đồ nội thất nào.
-                - KHÔNG thay đổi góc camera.
-                - Độ phân giải đầu ra: Giữ nguyên như Ảnh 1.`;
-            }
-            form.append('prompt', prompt);
-
-            // Construct public URLs
-            const baseUrl = process.env.APP_URL;
-            const roomUrl = `${baseUrl}/temp/${path.basename(roomFile)}`;
-            const rugUrl = `${baseUrl}/temp/${path.basename(rugFile)}`;
-
-            console.log(`[Visualizer] Sending URLs to API: Room=${roomUrl}, Rug=${rugUrl}`);
-
-            // Send URLs instead of files to avoid 413 Entity Too Large
-            form.append('room_image_url', roomUrl);
-            form.append('rug_image_url', rugUrl);
+            ## LỆNH THỰC THI (ACTION):
+            Thay thế bề mặt sàn nhà trong Ảnh 1 bằng chất liệu từ Ảnh 2.
+            1. [PERSPECTIVE MATCH]: Bẻ cong họa tiết thảm (Ảnh 2) để khớp hoàn hảo với điểm tụ và mặt phẳng sàn của Ảnh 1.
+            2. [OCCLUSION HANDLING]: Xác định các vật thể tiền cảnh (chân bàn, ghế, sofa). Đặt lớp thảm mới nằm DƯỚI các vật thể này. Không được vẽ đè lên đồ đạc.
+            3. [LIGHTING INTEGRATION]: Giữ nguyên bản đồ bóng đổ (shadow map) của Ảnh 1. Áp bóng đổ của bàn ghế lên mặt thảm mới một cách tự nhiên.
             
-            const url = new URL(apiUrl);
-            const isHttps = url.protocol === 'https:';
-            const client = isHttps ? https : http;
+            ## RÀNG BUỘC (CONSTRAINTS):
+            - Tuyệt đối KHÔNG thay đổi hình dáng hay vị trí của bất kỳ đồ nội thất nào.
+            - KHÔNG thay đổi góc camera.
+            - Độ phân giải đầu ra: Giữ nguyên như Ảnh 1.`;
+        }
+        form.append('prompt', prompt);
 
-            const startTime = Date.now();
-            self.log('API Request Start', {
-                url: apiUrl,
-                roomUrl,
-                rugUrl,
-                prompt: prompt ? prompt.substring(0, 100) + '...' : 'Default Prompt'
-            });
+        // Construct public URLs
+        const baseUrl = process.env.APP_URL;
+        const roomUrl = `${baseUrl}/temp/${path.basename(roomFile)}`;
+        const rugUrl = `${baseUrl}/temp/${path.basename(rugFile)}`;
 
-            const options = {
-                hostname: url.hostname,
-                port: url.port || (isHttps ? 443 : 80),
-                path: url.pathname + url.search,
-                method: 'POST',
-                headers: form.getHeaders(),
-                timeout: 600000 // 10 minutes
-            };
+        console.log(`[Visualizer] Sending URLs to API: Room=${roomUrl}, Rug=${rugUrl}`);
 
-            const req = client.request(options, (res) => {
-                let data = '';
-
-                res.on('data', (chunk) => {
-                    data += chunk;
-                });
-
-                res.on('end', () => {
-                    const duration = Date.now() - startTime;
-                    self.log(`API Response Received (${duration}ms)`, {
-                        statusCode: res.statusCode,
-                        bodyPreview: data.substring(0, 500) // Log first 500 chars only
-                    });
-
-                    if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
-                        try {
-                            const json = JSON.parse(data);
-                            resolve(json.output || json.image || json[0]?.output || '');
-                        } catch (e) {
-                            self.log('API JSON Parse Error', { error: String(e), data });
-                            reject(new Error('Invalid JSON response from API'));
-                        }
-                    } else {
-                        reject(new Error(`API Error: ${res.statusCode} - ${data}`));
-                    }
-                });
-            });
-
-            req.on('error', (error) => {
-                const duration = Date.now() - startTime;
-                self.log(`API Request Error (${duration}ms)`, { error: error.message });
-                reject(error);
-            });
-
-            form.pipe(req);
+        // Send URLs instead of files to avoid 413 Entity Too Large
+        form.append('room_image_url', roomUrl);
+        form.append('rug_image_url', rugUrl);
+        
+        const startTime = Date.now();
+        self.log('API Request Start', {
+            url: apiUrl,
+            roomUrl,
+            rugUrl,
+            prompt: prompt ? prompt.substring(0, 100) + '...' : 'Default Prompt'
         });
+
+        try {
+            const response = await axios.post(apiUrl, form, {
+                headers: {
+                    ...form.getHeaders(),
+                },
+                timeout: 600000, // 10 minutes
+                maxBodyLength: Infinity,
+                maxContentLength: Infinity
+            });
+
+            const duration = Date.now() - startTime;
+            self.log(`API Response Received (${duration}ms)`, {
+                statusCode: response.status,
+                bodyPreview: JSON.stringify(response.data).substring(0, 500)
+            });
+
+            const json = response.data;
+            return json.output || json.image || json[0]?.output || '';
+
+        } catch (error: any) {
+            const duration = Date.now() - startTime;
+            const errorInfo = {
+                message: error.message,
+                code: error.code,
+                response: error.response ? {
+                    status: error.response.status,
+                    data: error.response.data
+                } : 'No response'
+            };
+            self.log(`API Request Error (${duration}ms)`, errorInfo);
+            throw new Error(`API Error: ${error.message}`);
+        }
     }
 
     private getMimeType(filePath: string): string {
