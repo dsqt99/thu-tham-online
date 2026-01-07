@@ -20,22 +20,22 @@ export class Visualizer {
             const imgBase64 = await this.callApi(prompt, roomPath, rugPath);
             
             // Xóa file tạm
-            try {
-                fs.unlinkSync(roomPath);
-                fs.unlinkSync(rugPath);
-            } catch (err) {
-                // Ignore cleanup errors
-            }
+            // try {
+            //     fs.unlinkSync(roomPath);
+            //     fs.unlinkSync(rugPath);
+            // } catch (err) {
+            //     // Ignore cleanup errors
+            // }
 
             return { image: imgBase64 };
         } catch (error: any) {
             // Xóa file tạm ngay cả khi lỗi
-            try {
-                fs.unlinkSync(roomPath);
-                fs.unlinkSync(rugPath);
-            } catch (err) {
-                // Ignore cleanup errors
-            }
+            // try {
+            //     fs.unlinkSync(roomPath);
+            //     fs.unlinkSync(rugPath);
+            // } catch (err) {
+            //     // Ignore cleanup errors
+            // }
             return { error: error.message || 'Lỗi không xác định' };
         }
     }

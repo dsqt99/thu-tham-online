@@ -257,11 +257,11 @@ app.post('/upload', upload.fields([
         );
 
         // If error from visualizer
-        if (result.error) {
-            // Visualizer đã xóa file, nhưng đảm bảo cleanup nếu chưa
-            cleanupTempFiles();
-            return res.json({ success: false, message: result.error });
-        }
+        // if (result.error) {
+        //     // Visualizer đã xóa file, nhưng đảm bảo cleanup nếu chưa
+        //     cleanupTempFiles();
+        //     return res.json({ success: false, message: result.error });
+        // }
 
         // Success -> increment the counter
         limiter.increment(req);
@@ -275,19 +275,19 @@ app.post('/upload', upload.fields([
         console.error('Upload error:', error);
         
         // Ensure temp files are cleaned up on exception
-        try {
-            const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-            if (files) {
-                if (files['room'] && files['room'][0] && fs.existsSync(files['room'][0].path)) {
-                    fs.unlinkSync(files['room'][0].path);
-                }
-                if (files['rug'] && files['rug'][0] && fs.existsSync(files['rug'][0].path)) {
-                    fs.unlinkSync(files['rug'][0].path);
-                }
-            }
-        } catch (cleanupErr) {
-            console.error('Cleanup error:', cleanupErr);
-        }
+        // try {
+        //     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+        //     if (files) {
+        //         if (files['room'] && files['room'][0] && fs.existsSync(files['room'][0].path)) {
+        //             fs.unlinkSync(files['room'][0].path);
+        //         }
+        //         if (files['rug'] && files['rug'][0] && fs.existsSync(files['rug'][0].path)) {
+        //             fs.unlinkSync(files['rug'][0].path);
+        //         }
+        //     }
+        // } catch (cleanupErr) {
+        //     console.error('Cleanup error:', cleanupErr);
+        // }
         
         return res.status(500).json({
             success: false,
