@@ -488,6 +488,17 @@ app.get('/logs/api_logs.log', (req, res) => {
     }
 });
 
+// Serve usage file
+app.get('/logs/usage.json', (req, res) => {
+    const usagePath = path.join(__dirname, '../storage/usage.json');
+    if (fs.existsSync(usagePath)) {
+        res.setHeader('Content-Type', 'application/json');
+        res.sendFile(usagePath);
+    } else {
+        res.status(404).send('Usage file not found');
+    }
+});
+
 app.use('/admin', express.static(path.join(__dirname, '../upload')));
 
 // Cleanup old temp files function
