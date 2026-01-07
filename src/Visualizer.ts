@@ -15,28 +15,26 @@ export class Visualizer {
         }
     }
 
-    public async generate(prompt: string, roomPath: string, rugPath: string, roomName: string, rugName: string): Promise<{ image?: string; error?: string }> {
+    public async startJob(prompt: string, roomPath: string, rugPath: string): Promise<{ jobId?: string; status?: string; error?: string }> {
         try {
-            const imgBase64 = await this.callApi(prompt, roomPath, rugPath);
-            
-            // Xóa file tạm
-            try {
-                fs.unlinkSync(roomPath);
-                fs.unlinkSync(rugPath);
-            } catch (err) {
-                // Ignore cleanup errors
-            }
-
-            return { image: imgBase64 };
+            const result = await this.callStartJobApi(prompt, roomPath, rugPath);
+            return result;
         } catch (error: any) {
-            // Xóa file tạm ngay cả khi lỗi
-            try {
-                fs.unlinkSync(roomPath);
-                fs.unlinkSync(rugPath);
-            } catch (err) {
-                // Ignore cleanup errors
-            }
             return { error: error.message || 'Lỗi không xác định' };
+        }
+    }
+
+    public async checkJobStatus(jobId: string): Promise<any> {
+        const apiUrl = "https://continew-ai.app.n8n.cloud/webhook/recheck-gheptham";
+        try {
+            const response = await axios.get(apiUrl, {
+                params: { id: jobId },
+                timeout: 30000 // 30s timeout for status check
+            });
+            return response.data;
+        } catch (error: any) {
+            console.error(`[Visualizer] Check status error for job ${jobId}:`, error.message);
+            throw new Error(`Check status error: ${error.message}`);
         }
     }
 
@@ -66,7 +64,7 @@ export class Visualizer {
         }
     }
 
-    private async callApi(prompt: string, roomFile: string, rugFile: string): Promise<string> {
+    private async callStartJobApi(prompt: string, roomFile: string, rugFile: string): Promise<{ jobId?: string; status?: string }> {
         const apiUrl = process.env.API_GEN_IMAGE_URL || "https://continew-ai.app.n8n.cloud/webhook/thu-tham-online";
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         const self = this;
@@ -105,18 +103,17 @@ export class Visualizer {
             throw new Error(`Rug file not found at: ${rugFile}`);
         }
 
-        console.log(`[Visualizer] Sending URLs to API: Room=${roomUrl}, Rug=${rugUrl}`);
+        console.log(`[Visualizer] Starting Job: Room=${roomUrl}, Rug=${rugUrl}`);
 
         // Send URLs instead of files to avoid 413 Entity Too Large
         form.append('room_image_url', roomUrl);
         form.append('rug_image_url', rugUrl);
         
         const startTime = Date.now();
-        self.log('API Request Start', {
+        self.log('Job Request Start', {
             url: apiUrl,
             roomUrl,
-            rugUrl,
-            prompt: prompt ? prompt.substring(0, 100) + '...' : 'Default Prompt'
+            rugUrl
         });
 
         try {
@@ -126,38 +123,28 @@ export class Visualizer {
                     ...form.getHeaders(),
                 },
                 httpsAgent,
-                timeout: 600000, // 10 minutes
+                timeout: 30000, // 30s timeout for job creation
                 maxBodyLength: Infinity,
                 maxContentLength: Infinity
             });
 
             const duration = Date.now() - startTime;
-            self.log(`API Response Received (${duration}ms)`, {
-                statusCode: response.status,
-                bodyPreview: JSON.stringify(response.data).substring(0, 500)
-            });
+            self.log(`Job Created (${duration}ms)`, response.data);
 
             const json = response.data;
-            const extracted = this.extractImageBase64(json);
-            if (extracted) {
-                return extracted;
+            
+            // Expecting { id: "...", status: "..." }
+            if (json.id) {
+                return { jobId: json.id, status: json.status || 'queued' };
             }
             
-            // Fallback to old manual checks if helper fails (unlikely)
-            return json.output || json.image || json[0]?.output || '';
+            // Fallback if structure is different
+            return { jobId: json.jobId || json.id, status: json.status };
 
         } catch (error: any) {
             const duration = Date.now() - startTime;
-            const errorInfo = {
-                message: error.message,
-                code: error.code,
-                response: error.response ? {
-                    status: error.response.status,
-                    data: error.response.data
-                } : 'No response'
-            };
-            self.log(`API Request Error (${duration}ms)`, errorInfo);
-            throw new Error(`API Error: ${error.message}`);
+            self.log(`Job Creation Error (${duration}ms)`, error.message);
+            throw new Error(`Job Creation Error: ${error.message}`);
         }
     }
 

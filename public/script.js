@@ -696,22 +696,17 @@ async function generateImage() {
         form.append('room', roomFile);
         form.append('rug', rugFile);
 
-        // Upload
+        // Upload to start job
         const resp = await fetch('/upload', {
             method: 'POST',
             body: form
         });
 
-        // Khi API trả về, set progress lên 100%
-        clearInterval(progressInterval);
-        currentProgress = 100;
-        progressFill.style.width = '100%';
-        progressText.textContent = '100%';
-
         const json = await resp.json();
 
         // Kiểm tra rate limit (status 429)
         if (resp.status === 429 || (json.code === 'rate_limit')) {
+            clearInterval(progressInterval);
             // Reset button state
             btnGenerate.disabled = false;
             btnText.style.display = 'inline';
@@ -724,6 +719,7 @@ async function generateImage() {
         }
 
         if (!json.success) {
+            clearInterval(progressInterval);
             // Reset button state
             btnGenerate.disabled = false;
             btnText.style.display = 'inline';
@@ -734,30 +730,117 @@ async function generateImage() {
             return;
         }
 
-        // Show result
-        const imgUrl = 'data:image/jpeg;base64,' + json.image;
-        const resultImg = document.getElementById('result-image');
-        resultImg.onload = () => {
-            fitResultImage();
-        };
-        resultImg.src = imgUrl;
-        document.getElementById('download-btn').href = imgUrl;
+        // Job started successfully, now poll for status
+        const jobId = json.jobId;
+        statusMsg.textContent = 'Đang xử lý (0%)...';
+        
+        // Polling loop
+        const pollInterval = setInterval(async () => {
+            try {
+                const statusResp = await fetch(`/api/job-status/${jobId}`);
+                const statusJson = await statusResp.json();
 
-        showResultPopup();
-        statusMsg.textContent = 'Hoàn tất!';
-        statusMsg.style.color = 'green';
+                if (!statusJson.success) {
+                    throw new Error(statusJson.message || 'Lỗi kiểm tra trạng thái');
+                }
 
-        // Reset button state (ẩn spinner và progress)
-        btnGenerate.disabled = false;
-        btnText.style.display = 'inline';
-        btnSpinner.style.display = 'none';
-        progressContainer.style.display = 'none';
+                const status = statusJson.status;
+                
+                // Update progress based on status
+                if (status === 'processing' || status === 'queued') {
+                    // Keep progress bar moving slowly
+                    if (currentProgress < 95) {
+                        currentProgress += 2;
+                        progressFill.style.width = currentProgress + '%';
+                        progressText.textContent = Math.min(Math.round(currentProgress), 95) + '%';
+                    }
+                    statusMsg.textContent = `Đang xử lý (${status})...`;
+                } else if (status === 'completed') {
+                    clearInterval(pollInterval);
+                    clearInterval(progressInterval);
+                    
+                    progressFill.style.width = '100%';
+                    progressText.textContent = '100%';
+
+                    // Handle result
+                    let imgUrl = '';
+                    if (statusJson.result && statusJson.result.imageUrl) {
+                        imgUrl = statusJson.result.imageUrl;
+                    } else if (statusJson.result && Array.isArray(statusJson.result.imageUrls) && statusJson.result.imageUrls.length > 0) {
+                        imgUrl = statusJson.result.imageUrls[0];
+                    }
+
+                    if (!imgUrl) {
+                        throw new Error('Không tìm thấy ảnh trong kết quả trả về');
+                    }
+
+                    // Show result
+                    const resultImg = document.getElementById('result-image');
+                    resultImg.onload = () => {
+                        fitResultImage();
+                    };
+                    resultImg.onerror = () => {
+                        statusMsg.textContent = 'Lỗi tải ảnh kết quả';
+                        statusMsg.style.color = 'red';
+                    };
+                    resultImg.src = imgUrl;
+                    
+                    const downloadBtn = document.getElementById('download-btn');
+                    downloadBtn.href = imgUrl;
+                    downloadBtn.onclick = async (e) => {
+                        e.preventDefault();
+                        try {
+                            const blobResp = await fetch(imgUrl);
+                            const blob = await blobResp.blob();
+                            const blobUrl = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = blobUrl;
+                            a.download = `tham_result_${Date.now()}.jpg`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(blobUrl);
+                        } catch (err) {
+                            window.open(imgUrl, '_blank');
+                        }
+                    };
+
+                    showResultPopup();
+                    statusMsg.textContent = 'Hoàn tất!';
+                    statusMsg.style.color = 'green';
+                    
+                    // Reset UI logic
+                    btnGenerate.disabled = false;
+                    btnText.style.display = 'inline';
+                    btnSpinner.style.display = 'none';
+                    progressContainer.style.display = 'none';
+
+                } else if (status === 'failed') {
+                    clearInterval(pollInterval);
+                    clearInterval(progressInterval);
+                    throw new Error(statusJson.error || 'Quá trình xử lý thất bại');
+                }
+            } catch (err) {
+                console.error('Polling error:', err);
+                if (err.message.includes('Lỗi kiểm tra trạng thái') || err.message.includes('thất bại')) {
+                     clearInterval(pollInterval);
+                     clearInterval(progressInterval);
+                     btnGenerate.disabled = false;
+                     btnText.style.display = 'inline';
+                     btnSpinner.style.display = 'none';
+                     progressContainer.style.display = 'none';
+                     statusMsg.textContent = err.message;
+                     statusMsg.style.color = 'red';
+                     
+                     showErrorToast(err.message);
+                }
+            }
+        }, 3000);
 
     } catch (error) {
+        clearInterval(progressInterval);
         console.error('Generate error:', error);
         
-        // Reset button state
-        clearInterval(progressInterval);
         btnGenerate.disabled = false;
         btnText.style.display = 'inline';
         btnSpinner.style.display = 'none';
@@ -766,6 +849,57 @@ async function generateImage() {
         statusMsg.textContent = 'Có lỗi xảy ra: ' + error.message;
         statusMsg.style.color = 'red';
     }
+}
+
+function showErrorToast(message) {
+    let toast = document.getElementById('error-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'error-toast';
+        toast.style.position = 'fixed';
+        toast.style.top = '20px';
+        toast.style.right = '20px';
+        toast.style.backgroundColor = '#ff4d4f';
+        toast.style.color = 'white';
+        toast.style.padding = '15px 25px';
+        toast.style.borderRadius = '8px';
+        toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        toast.style.zIndex = '9999';
+        toast.style.display = 'flex';
+        toast.style.alignItems = 'center';
+        toast.style.gap = '10px';
+        toast.style.transition = 'opacity 0.3s ease';
+        
+        const icon = document.createElement('span');
+        icon.innerHTML = '⚠️';
+        toast.appendChild(icon);
+        
+        const text = document.createElement('span');
+        text.id = 'error-toast-text';
+        toast.appendChild(text);
+        
+        const close = document.createElement('button');
+        close.innerHTML = '×';
+        close.style.background = 'none';
+        close.style.border = 'none';
+        close.style.color = 'white';
+        close.style.fontSize = '20px';
+        close.style.cursor = 'pointer';
+        close.style.marginLeft = '10px';
+        close.onclick = () => { toast.style.opacity = '0'; setTimeout(() => toast.style.display = 'none', 300); };
+        toast.appendChild(close);
+        
+        document.body.appendChild(toast);
+    }
+    
+    document.getElementById('error-toast-text').textContent = message;
+    toast.style.display = 'flex';
+    toast.style.opacity = '1';
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.style.display = 'none', 300);
+    }, 5000);
 }
 
 function resetFlow() {

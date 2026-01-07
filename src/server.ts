@@ -247,18 +247,14 @@ app.post('/upload', upload.fields([
             return res.json({ success: false, message: 'Ảnh thảm vượt quá 5MB' });
         }
 
-        // Generate image
-        const result = await visualizer.generate(
+        // Start job
+        const result = await visualizer.startJob(
             prompt, // prompt
             roomFile.path,
-            rugFile.path,
-            roomFile.originalname,
-            rugFile.originalname
+            rugFile.path
         );
 
-        // If error from visualizer
         if (result.error) {
-            // Visualizer đã xóa file, nhưng đảm bảo cleanup nếu chưa
             cleanupTempFiles();
             return res.json({ success: false, message: result.error });
         }
@@ -268,8 +264,9 @@ app.post('/upload', upload.fields([
 
         return res.json({
             success: true,
-            image: result.image,
-            message: 'OK'
+            jobId: result.jobId,
+            status: result.status || 'queued',
+            message: 'Job started'
         });
     } catch (error: any) {
         console.error('Upload error:', error);
@@ -294,6 +291,15 @@ app.post('/upload', upload.fields([
             message: error.message || 'Lỗi server'
         });
     }
+});
+
+app.get('/api/job-status/:jobId', async (req: Request, res: Response) => {
+    const { jobId } = req.params;
+    const status = await visualizer.checkJobStatus(jobId);
+    if (!status) {
+        return res.status(404).json({ success: false, message: 'Job not found' });
+    }
+    return res.json({ success: true, ...status });
 });
 
 // API: Lấy danh sách ảnh thảm
