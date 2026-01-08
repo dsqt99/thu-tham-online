@@ -62,7 +62,8 @@ Nếu bạn cài Nginx trực tiếp trên Host (Ubuntu/CentOS), hãy tạo file
 
 1. Tạo file config:
    ```bash
-   sudo nano /etc/nginx/sites-available/gheptham.cahy.io.vn
+   sudo nano /etc/nginx/sites-available/gheptham.thamhanlong.com
+   sudo rm -rf /etc/nginx/sites-available/gheptham.cahy.io.vn
    ```
 
 2. Dán nội dung sau (Thay `gheptham.cahy.io.vn` bằng domain của bạn):
@@ -91,10 +92,10 @@ Nếu bạn cài Nginx trực tiếp trên Host (Ubuntu/CentOS), hãy tạo file
 
 3. Kích hoạt và cài SSL:
    ```bash
-   sudo ln -s /etc/nginx/sites-available/gheptham.cahy.io.vn /etc/nginx/sites-enabled/
+   sudo ln -s /etc/nginx/sites-available/gheptham.thamhanlong.com /etc/nginx/sites-enabled/
    sudo nginx -t
    sudo systemctl reload nginx
-   sudo certbot --nginx -d gheptham.cahy.io.vn
+   sudo certbot --nginx -d gheptham.thamhanlong.com
    ```
 
 ## Hướng dẫn sử dụng web
