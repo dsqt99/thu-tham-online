@@ -18,8 +18,10 @@ export class Visualizer {
     public async startJob(prompt: string, roomPath: string, rugPath: string): Promise<{ jobId?: string; status?: string; error?: string }> {
         try {
             const result = await this.callStartJobApi(prompt, roomPath, rugPath);
+            this.log('Start job result:', result);
             return result;
         } catch (error: any) {
+            this.log('Start job error:', error);
             return { error: error.message || 'Lỗi không xác định' };
         }
     }
