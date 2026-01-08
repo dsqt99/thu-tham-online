@@ -46,6 +46,39 @@ export class Visualizer {
             }
             
             // console.log(`[Visualizer] CheckJobStatus Normalized:`, normalizedData);
+
+            // Fetch Base64 if completed
+            if (normalizedData && normalizedData.status === 'completed' && normalizedData.result && normalizedData.result.imageUrl) {
+                try {
+                    // Use webhook-test as requested. In production, consider changing to /webhook/
+                    const base64ApiUrl = "https://continew-ai.app.n8n.cloud/webhook-test/get-result-gheptham";
+                    
+                    const b64Response = await axios.post(base64ApiUrl, {
+                        imageUrl: normalizedData.result.imageUrl
+                    }, {
+                        timeout: 60000,
+                        maxContentLength: Infinity,
+                        maxBodyLength: Infinity
+                    });
+
+                    const b64Data = b64Response.data;
+                    let finalBase64 = '';
+                    
+                    if (typeof b64Data === 'string') {
+                        finalBase64 = b64Data;
+                    } else if (typeof b64Data === 'object') {
+                        finalBase64 = b64Data.data || b64Data.base64 || b64Data.image || '';
+                    }
+
+                    if (finalBase64) {
+                        normalizedData.result.imageBase64 = finalBase64;
+                    }
+                } catch (err: any) {
+                    console.error('[Visualizer] Failed to fetch base64:', err.message);
+                    // Continue without base64 (fallback to URL)
+                }
+            }
+
             return normalizedData;
         } catch (error: any) {
             console.error(`[Visualizer] Check status error for job ${jobId}:`, error.message);

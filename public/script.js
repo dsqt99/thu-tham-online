@@ -782,18 +782,28 @@ async function generateImage() {
 
                     // Handle result
                     let imgUrl = '';
-                    if (statusJson.result && statusJson.result.imageUrl) {
-                        imgUrl = statusJson.result.imageUrl;
-                    } else if (statusJson.result && Array.isArray(statusJson.result.imageUrls) && statusJson.result.imageUrls.length > 0) {
-                        imgUrl = statusJson.result.imageUrls[0];
+                    let imgBase64 = '';
+
+                    if (statusJson.result) {
+                        if (statusJson.result.imageBase64) {
+                            imgBase64 = statusJson.result.imageBase64;
+                        }
+                        
+                        if (statusJson.result.imageUrl) {
+                            imgUrl = statusJson.result.imageUrl;
+                        } else if (Array.isArray(statusJson.result.imageUrls) && statusJson.result.imageUrls.length > 0) {
+                            imgUrl = statusJson.result.imageUrls[0];
+                        }
                     }
 
-                    if (!imgUrl) {
+                    if (!imgBase64 && !imgUrl) {
                         throw new Error('Không tìm thấy ảnh trong kết quả trả về');
                     }
 
                     // Show result
                     const resultImg = document.getElementById('result-image');
+                    const downloadBtn = document.getElementById('download-btn');
+                    
                     resultImg.onload = () => {
                         fitResultImage();
                     };
@@ -801,27 +811,52 @@ async function generateImage() {
                         statusMsg.textContent = 'Lỗi tải ảnh kết quả';
                         statusMsg.style.color = 'red';
                     };
-                    resultImg.src = imgUrl;
-                    
-                    const downloadBtn = document.getElementById('download-btn');
-                    downloadBtn.href = imgUrl;
-                    downloadBtn.onclick = async (e) => {
-                        e.preventDefault();
-                        try {
-                            const blobResp = await fetch(imgUrl);
-                            const blob = await blobResp.blob();
-                            const blobUrl = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = blobUrl;
-                            a.download = `tham_result_${Date.now()}.jpg`;
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            URL.revokeObjectURL(blobUrl);
-                        } catch (err) {
-                            window.open(imgUrl, '_blank');
-                        }
-                    };
+
+                    if (imgBase64) {
+                        const src = imgBase64.startsWith('data:image') ? imgBase64 : `data:image/jpeg;base64,${imgBase64}`;
+                        resultImg.src = src;
+                        
+                        // Setup download for Base64
+                        downloadBtn.href = '#';
+                        downloadBtn.onclick = (e) => {
+                            e.preventDefault();
+                            fetch(src)
+                                .then(res => res.blob())
+                                .then(blob => {
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.style.display = 'none';
+                                    a.href = url;
+                                    a.download = `tham_result_${Date.now()}.jpg`;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    window.URL.revokeObjectURL(url);
+                                })
+                                .catch(err => console.error('Download error:', err));
+                        };
+                    } else {
+                        // Fallback to URL
+                        resultImg.src = imgUrl;
+                        downloadBtn.href = imgUrl;
+                        downloadBtn.onclick = async (e) => {
+                            e.preventDefault();
+                            try {
+                                const blobResp = await fetch(imgUrl);
+                                const blob = await blobResp.blob();
+                                const blobUrl = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = blobUrl;
+                                a.download = `tham_result_${Date.now()}.jpg`;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(blobUrl);
+                            } catch (err) {
+                                console.error('Download error:', err);
+                                window.open(imgUrl, '_blank');
+                            }
+                        };
+                    }
 
                     showResultPopup();
                     statusMsg.textContent = 'Hoàn tất!';
