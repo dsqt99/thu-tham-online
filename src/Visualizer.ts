@@ -33,7 +33,20 @@ export class Visualizer {
                 params: { id: jobId },
                 timeout: 30000 // 30s timeout for status check
             });
-            return response.data;
+            
+            const data = response.data;
+            
+            // Normalize data (handle array vs object)
+            let normalizedData = data;
+            
+            if (Array.isArray(data)) {
+                normalizedData = data.length > 0 ? data[0] : null;
+            } else if (data && typeof data === 'object' && '0' in data) {
+                normalizedData = data['0'];
+            }
+            
+            // console.log(`[Visualizer] CheckJobStatus Normalized:`, normalizedData);
+            return normalizedData;
         } catch (error: any) {
             console.error(`[Visualizer] Check status error for job ${jobId}:`, error.message);
             throw new Error(`Check status error: ${error.message}`);

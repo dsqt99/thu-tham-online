@@ -735,7 +735,7 @@ async function generateImage() {
         statusMsg.textContent = 'Đang xử lý (0%)...';
         
         let pollCount = 0;
-        const maxPolls = 120; // Limit to 10 minutes (100 * 5s)
+        const maxPolls = 60; // Limit to 5 minutes (50 * 6s)
 
         // Polling loop
         const pollInterval = setInterval(async () => {
@@ -853,7 +853,7 @@ async function generateImage() {
                      showErrorToast(err.message);
                 }
             }
-        }, 5000);
+        }, 6000);
 
     } catch (error) {
         clearInterval(progressInterval);

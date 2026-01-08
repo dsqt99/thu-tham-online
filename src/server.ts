@@ -295,10 +295,20 @@ app.post('/upload', upload.fields([
 
 app.get('/api/job-status/:jobId', async (req: Request, res: Response) => {
     const { jobId } = req.params;
-    const status = await visualizer.checkJobStatus(jobId);
+    let status = await visualizer.checkJobStatus(jobId);
     if (!status) {
         return res.status(404).json({ success: false, message: 'Job not found' });
     }
+
+    // Extra safety: Normalize if it's still wrapped
+    if (status && typeof status === 'object') {
+        if ('0' in status) {
+            status = status['0'];
+        } else if (Array.isArray(status)) {
+            status = status.length > 0 ? status[0] : {};
+        }
+    }
+
     return res.json({ success: true, ...status });
 });
 
