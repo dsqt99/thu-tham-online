@@ -734,8 +734,26 @@ async function generateImage() {
         const jobId = json.jobId;
         statusMsg.textContent = 'Đang xử lý (0%)...';
         
+        let pollCount = 0;
+        const maxPolls = 120; // Limit to 10 minutes (100 * 5s)
+
         // Polling loop
         const pollInterval = setInterval(async () => {
+            pollCount++;
+            if (pollCount > maxPolls) {
+                clearInterval(pollInterval);
+                clearInterval(progressInterval);
+                
+                // Reset UI
+                btnGenerate.disabled = false;
+                btnText.style.display = 'inline';
+                btnSpinner.style.display = 'none';
+                progressContainer.style.display = 'none';
+                
+                showErrorToast('Quá thời gian xử lý (timeout). Vui lòng thử lại sau.');
+                return;
+            }
+
             try {
                 const statusResp = await fetch(`/api/job-status/${jobId}`);
                 const statusJson = await statusResp.json();
@@ -835,7 +853,7 @@ async function generateImage() {
                      showErrorToast(err.message);
                 }
             }
-        }, 3000);
+        }, 5000);
 
     } catch (error) {
         clearInterval(progressInterval);

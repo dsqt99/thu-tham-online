@@ -133,17 +133,18 @@ export class Visualizer {
             const duration = Date.now() - startTime;
             self.log(`Job Created (${duration}ms)`, response.data);
             
-            console.log('Response Headers:', response);
             const json = response.data;
-            console.log('Full Response:', json);
             
+            // Handle array response from n8n
+            const data = Array.isArray(json) ? json[0] : json;
+
             // Expecting { id: "...", status: "..." }
-            if (json.id) {
-                return { jobId: json.id, status: json.status || 'queued' };
+            if (data.id) {
+                return { jobId: data.id, status: data.status || 'queued' };
             }
             
             // Fallback if structure is different
-            return { jobId: json.jobId || json.id, status: json.status };
+            return { jobId: data.jobId || data.id, status: data.status };
 
         } catch (error: any) {
             const duration = Date.now() - startTime;
