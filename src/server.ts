@@ -247,11 +247,16 @@ app.post('/upload', upload.fields([
             return res.json({ success: false, message: 'Ảnh thảm vượt quá 5MB' });
         }
 
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+        const host = req.get('host');
+        const baseUrl = `${protocol}://${host}`;
+
         // Start job
         const result = await visualizer.startJob(
             prompt, // prompt
             roomFile.path,
-            rugFile.path
+            rugFile.path,
+            baseUrl
         );
 
         if (result.error) {

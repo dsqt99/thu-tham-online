@@ -15,9 +15,9 @@ export class Visualizer {
         }
     }
 
-    public async startJob(prompt: string, roomPath: string, rugPath: string): Promise<{ jobId?: string; status?: string; error?: string }> {
+    public async startJob(prompt: string, roomPath: string, rugPath: string, baseUrl?: string): Promise<{ jobId?: string; status?: string; error?: string }> {
         try {
-            const result = await this.callStartJobApi(prompt, roomPath, rugPath);
+            const result = await this.callStartJobApi(prompt, roomPath, rugPath, baseUrl);
             this.log('Start job result:', result);
             return result;
         } catch (error: any) {
@@ -115,7 +115,7 @@ export class Visualizer {
         }
     }
 
-    private async callStartJobApi(prompt: string, roomFile: string, rugFile: string): Promise<{ jobId?: string; status?: string }> {
+    private async callStartJobApi(prompt: string, roomFile: string, rugFile: string, baseUrlOverride?: string): Promise<{ jobId?: string; status?: string }> {
         const apiUrl = process.env.API_GEN_IMAGE_URL || "https://continew-ai.app.n8n.cloud/webhook/thu-tham-online";
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         const self = this;
@@ -142,7 +142,7 @@ export class Visualizer {
         form.append('prompt', prompt);
 
         // Construct public URLs
-        const baseUrl = process.env.APP_URL;
+        const baseUrl = baseUrlOverride || process.env.APP_URL;
         const roomUrl = `${baseUrl}/temp/${path.basename(roomFile)}`;
         const rugUrl = `${baseUrl}/temp/${path.basename(rugFile)}`;
 
