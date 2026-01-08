@@ -64,10 +64,13 @@ export class Visualizer {
                     const b64Data = b64Response.data;
                     let finalBase64 = '';
                     
-                    if (typeof b64Data === 'string') {
-                        finalBase64 = b64Data;
-                    } else if (typeof b64Data === 'object') {
-                        finalBase64 = b64Data.data || b64Data.base64 || b64Data.image || '';
+                    // Handle array response for Base64 (n8n style)
+                    const b64Item = Array.isArray(b64Data) && b64Data.length > 0 ? b64Data[0] : b64Data;
+                    
+                    if (typeof b64Item === 'string') {
+                        finalBase64 = b64Item;
+                    } else if (typeof b64Item === 'object' && b64Item !== null) {
+                        finalBase64 = b64Item.data || b64Item.base64 || b64Item.image || '';
                     }
 
                     if (finalBase64) {
