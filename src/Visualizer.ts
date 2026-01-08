@@ -132,8 +132,10 @@ export class Visualizer {
 
             const duration = Date.now() - startTime;
             self.log(`Job Created (${duration}ms)`, response.data);
-
+            
+            console.log('Response Headers:', response);
             const json = response.data;
+            console.log('Full Response:', json);
             
             // Expecting { id: "...", status: "..." }
             if (json.id) {
