@@ -657,7 +657,7 @@ async function generateImage() {
     statusMsg.style.display = 'block';
     statusMsg.style.color = 'var(--text)';
 
-    // Progress từ 0-90% trong 30 giây (mỗi 10% = 3.33 giây)
+    // Progress từ 0-90% trong 60 giây (mỗi 10% = 6 giây)
     let currentProgress = 0;
     const progressInterval = setInterval(() => {
         if (currentProgress < 90) {
@@ -665,7 +665,7 @@ async function generateImage() {
             progressFill.style.width = currentProgress + '%';
             progressText.textContent = currentProgress + '%';
         }
-    }, 3333); // 3.33 giây = 3333ms
+    }, 6000); // 6 giây = 6000ms
 
     try {
         // Download rug image if needed
@@ -765,15 +765,7 @@ async function generateImage() {
                 const status = statusJson.status;
                 
                 // Update progress based on status
-                if (status === 'processing' || status === 'queued') {
-                    // Keep progress bar moving slowly
-                    if (currentProgress < 95) {
-                        currentProgress += 2;
-                        progressFill.style.width = currentProgress + '%';
-                        progressText.textContent = Math.min(Math.round(currentProgress), 95) + '%';
-                    }
-                    statusMsg.textContent = `Đang xử lý (${status})...`;
-                } else if (status === 'completed') {
+                if (status === 'completed') {
                     clearInterval(pollInterval);
                     clearInterval(progressInterval);
                     

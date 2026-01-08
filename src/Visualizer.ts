@@ -51,7 +51,7 @@ export class Visualizer {
             if (normalizedData && normalizedData.status === 'completed' && normalizedData.result && normalizedData.result.imageUrl) {
                 try {
                     // Use webhook-test as requested. In production, consider changing to /webhook/
-                    const base64ApiUrl = "https://continew-ai.app.n8n.cloud/webhook-test/get-result-gheptham";
+                    const base64ApiUrl = "https://continew-ai.app.n8n.cloud/webhook/get-result-gheptham";
                     
                     const b64Response = await axios.post(base64ApiUrl, {
                         imageUrl: normalizedData.result.imageUrl
