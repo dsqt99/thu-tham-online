@@ -139,7 +139,7 @@ function clearBotSelection(key) {
 }
 
 function showStep(stepName) {
-    const orderedSteps = ['roomType', 'style', 'color', 'rugs', 'room', 'generate'];
+    const orderedSteps = ['roomType', 'style', 'rugs', 'room', 'generate'];
     const targetIndex = orderedSteps.indexOf(stepName);
     if (targetIndex === -1) return;
 
@@ -175,10 +175,13 @@ function setupEventListeners() {
             state.style = nextValue;
             setOptionSelected('#step-style', btn);
             updateBotSelection('style', btn.textContent);
-            const btnChooseRoomSample = document.getElementById('btn-choose-room-sample');
-            if (btnChooseRoomSample && btnChooseRoomSample.classList.contains('selected')) {
-                loadRooms();
+            
+            // Reload rugs if rug sample choice is active
+            const btnChooseRugSample = document.getElementById('btn-choose-rug-sample');
+            if (btnChooseRugSample && btnChooseRugSample.classList.contains('selected')) {
+                loadRugs();
             }
+
             setTimeout(() => {
                 if (state.currentStep <= 2) {
                     showStep('rugs');
@@ -435,7 +438,14 @@ function hideRateLimitPopup() {
 
 async function loadRugs() {
     try {
-        const resp = await fetch('/api/rugs');
+        const params = new URLSearchParams();
+        if (state.style) {
+            params.append('style', state.style);
+        }
+        const queryString = params.toString();
+        const url = queryString ? `/api/rugs?${queryString}` : '/api/rugs';
+
+        const resp = await fetch(url);
         const data = await resp.json();
         
         const rugsList = document.getElementById('rugs-list');
@@ -515,12 +525,6 @@ async function loadRooms() {
         const params = new URLSearchParams();
         if (state.roomType) {
             params.append('roomType', state.roomType);
-        }
-        if (state.color) {
-            params.append('color', state.color);
-        }
-        if (state.style) {
-            params.append('style', state.style);
         }
         
         const queryString = params.toString();
@@ -950,7 +954,7 @@ function showErrorToast(message) {
 function resetFlow() {
     // Move containers back to hidden area before clearing messages
     const holdingArea = document.getElementById('chatbot-container');
-    ['roomType', 'style', 'color', 'rugs', 'room', 'generate'].forEach(key => {
+    ['roomType', 'style', 'rugs', 'room', 'generate'].forEach(key => {
         const id = getStepContainerId(key);
         const el = document.getElementById(id);
         if (el) {
@@ -985,7 +989,6 @@ function resetFlow() {
     document.querySelectorAll('.image-item').forEach(el => el.classList.remove('selected'));
     clearOptionSelections('#step-room-type');
     clearOptionSelections('#step-style');
-    clearOptionSelections('#step-color');
     setChoiceSelected('');
     setRugChoiceSelected('');
     const roomInput = document.getElementById('room-file-input');

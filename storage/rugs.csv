@@ -1,8 +1,8 @@
-id,name,code,path
-1,Saba 1,Saba-1,/images/rugs/Saba-1.jpg
-2,Sivas 2403 1,Sivas-2403-1,/images/rugs/Sivas-2403-1.jpg
-3,Sivas 2404 2,Sivas-2404-2,/images/rugs/Sivas-2404-2.jpg
-4,Sivas 2405 1,Sivas-2405-1,/images/rugs/Sivas-2405-1.jpg
-5,Sivas 2413 1,Sivas-2413-1,/images/rugs/Sivas-2413-1.jpg
-6,Thảm 1,THAM-01,/images/rugs/THAM-01.jpg
-7,Thảm 2,THAM-02,/images/rugs/THAM-02.jpg
+id,name,code,style,path
+1,Saba 1,Saba-1,Cổ điển,/images/rugs/Saba-1.jpg
+2,Sivas 2403 1,Sivas-2403-1,Bohemian,/images/rugs/Sivas-2403-1.jpg
+3,Sivas 2404 2,Sivas-2404-2,Tối giản,/images/rugs/Sivas-2404-2.jpg
+4,Sivas 2405 1,Sivas-2405-1,Bắc Âu,/images/rugs/Sivas-2405-1.jpg
+5,Sivas 2413 1,Sivas-2413-1,Vintage,/images/rugs/Sivas-2413-1.jpg
+6,Thảm 1,THAM-01,Cổ điển,/images/rugs/THAM-01.jpg
+7,Thảm 2,THAM-02,Bohemian,/images/rugs/THAM-02.jpg

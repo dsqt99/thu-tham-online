@@ -96,13 +96,13 @@ export class AdminController {
 
             this.clearImagesSubdir('rooms');
 
-            // CSV Header: id,room,style,path
-            const csvLines = ['id,room,style,path'];
+            // CSV Header: id,room,path
+            const csvLines = ['id,room,path'];
             let count = 0;
 
             for (const row of data) {
-                // Expected columns: id, room, style, tone, link
-                const { id, room, style, link } = row;
+                // Expected columns: id, room, link
+                const { id, room, link } = row;
                 if (!link) continue;
 
                 // Create filename by id
@@ -115,15 +115,15 @@ export class AdminController {
 
                 // Add to CSV
                 const relativePath = `/images/rooms/${filenameBase}${dl.ext}`;
-                csvLines.push(`${id},${room || ''},${style || ''},${relativePath}`);
+                csvLines.push(`${id},${room || ''},${relativePath}`);
                 count++;
             }
 
             // Write CSV
             fs.writeFileSync(path.join(this.storageDir, 'rooms.csv'), csvLines.join('\n'));
 
-            // Update options.json
-            this.updateOptionsJson(data);
+            // Update options.json (Rooms only)
+            this.updateRoomOptions(data);
 
             // Cleanup temp file
             if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
@@ -153,13 +153,13 @@ export class AdminController {
 
             this.clearImagesSubdir('rugs');
 
-            // CSV Header: id,name,code,path
-            const csvLines = ['id,name,code,path'];
+            // CSV Header: id,name,code,style,path
+            const csvLines = ['id,name,code,style,path'];
             let count = 0;
 
             for (const row of data) {
-                // Expected columns: id, name, code, link
-                const { id, name, code, link } = row;
+                // Expected columns: id, name, code, style, link
+                const { id, name, code, style, link } = row;
                 if (!link) continue;
 
                 const filenameBase = `${code || id}`;
@@ -170,12 +170,15 @@ export class AdminController {
                 if (!dl.ok || !dl.ext) continue;
 
                 const relativePath = `/images/rugs/${filenameBase}${dl.ext}`;
-                csvLines.push(`${id},${name || ''},${code || ''},${relativePath}`);
+                csvLines.push(`${id},${name || ''},${code || ''},${style || ''},${relativePath}`);
                 count++;
             }
 
             // Write CSV
             fs.writeFileSync(path.join(this.storageDir, 'rugs.csv'), csvLines.join('\n'));
+
+            // Update options.json (Styles only)
+            this.updateStyleOptions(data);
 
             // Cleanup
             if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
@@ -187,25 +190,48 @@ export class AdminController {
         }
     };
 
-    // Extract options and save to JSON
-    private updateOptionsJson(data: any[]) {
-        const rooms = new Set<string>();
-        const styles = new Set<string>();
-        // const tones = new Set<string>(); // Tone removed
+    // Helper to read options
+    private readOptions(): { rooms: string[], styles: string[], tones: string[] } {
+        const optionsPath = path.join(this.storageDir, 'options.json');
+        if (fs.existsSync(optionsPath)) {
+            try {
+                return JSON.parse(fs.readFileSync(optionsPath, 'utf-8'));
+            } catch (e) {
+                console.error('Error reading options.json:', e);
+            }
+        }
+        return { rooms: [], styles: [], tones: [] };
+    }
 
+    // Helper to save options
+    private saveOptions(options: any) {
+        fs.writeFileSync(path.join(this.storageDir, 'options.json'), JSON.stringify(options, null, 2));
+    }
+
+    // Update Room Options
+    private updateRoomOptions(data: any[]) {
+        const options = this.readOptions();
+        const rooms = new Set<string>();
+        
         data.forEach(row => {
             if (row.room) rooms.add(row.room);
-            if (row.style) styles.add(row.style);
-            // if (row.tone) tones.add(row.tone);
         });
 
-        const options = {
-            rooms: Array.from(rooms),
-            styles: Array.from(styles),
-            tones: [] // Empty tones
-        };
+        options.rooms = Array.from(rooms);
+        this.saveOptions(options);
+    }
 
-        fs.writeFileSync(path.join(this.storageDir, 'options.json'), JSON.stringify(options, null, 2));
+    // Update Style Options (from Rugs)
+    private updateStyleOptions(data: any[]) {
+        const options = this.readOptions();
+        const styles = new Set<string>();
+
+        data.forEach(row => {
+            if (row.style) styles.add(row.style);
+        });
+
+        options.styles = Array.from(styles);
+        this.saveOptions(options);
     }
 
     // Helper to normalize string for folder names (e.g. "Phòng Khách" -> "phong-khach")

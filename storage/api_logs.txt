@@ -1,0 +1,12 @@
+[2026-01-13T15:25:22.709Z] Job Request Start
+{
+  "url": "https://continew-ai.app.n8n.cloud/webhook/thu-tham-online",
+  "roomUrl": "http://localhost:3000/temp/room_1768317922703.jpg",
+  "rugUrl": "http://localhost:3000/temp/rug_1768317922704.jpg"
+}
+--------------------------------------------------
+[2026-01-13T15:25:27.286Z] Job Created (4576ms)
+--------------------------------------------------
+[2026-01-13T15:25:27.288Z] Start job result:
+{}
+--------------------------------------------------

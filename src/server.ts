@@ -320,6 +320,7 @@ app.get('/api/job-status/:jobId', async (req: Request, res: Response) => {
 // API: Lấy danh sách ảnh thảm
 app.get('/api/rugs', (req: Request, res: Response) => {
     try {
+        const style = req.query.style as string;
         const csvPath = path.join(__dirname, '../storage/rugs.csv');
         if (fs.existsSync(csvPath)) {
             const content = fs.readFileSync(csvPath, 'utf-8');
@@ -329,13 +330,19 @@ app.get('/api/rugs', (req: Request, res: Response) => {
             
             const images = dataLines.map(line => {
                 const parts = line.split(',');
-                if (parts.length >= 4) {
+                if (parts.length >= 5) {
                     const id = parts[0];
                     const name = parts[1];
                     const code = parts[2];
-                    const url = parts[3].trim();
+                    const rowStyle = parts[3];
+                    const url = parts[4].trim();
                     
                     if (!url) return null;
+
+                    // Filter by style if provided
+                    if (style && normalizeString(rowStyle) !== normalizeString(style)) {
+                        return null;
+                    }
 
                     // Verify file existence
                     let localPath = '';
@@ -358,7 +365,8 @@ app.get('/api/rugs', (req: Request, res: Response) => {
                         filename: name || code || path.basename(url),
                         url: url,
                         name: name,
-                        code: code
+                        code: code,
+                        style: rowStyle
                     };
                 }
                 return null;
@@ -398,8 +406,8 @@ function normalizeString(str: string): string {
 app.get('/api/rooms', (req: Request, res: Response) => {
     try {
         const roomType = req.query.roomType as string;
-        const color = req.query.color as string;
-        const style = req.query.style as string;
+        // const color = req.query.color as string; // Removed color filter
+        // const style = req.query.style as string; // Removed style filter for rooms
 
         // Try reading from CSV first
         const csvPath = path.join(__dirname, '../storage/rooms.csv');
@@ -412,12 +420,12 @@ app.get('/api/rooms', (req: Request, res: Response) => {
                 const parts = line.split(',');
                 let id, room, rowStyle, url;
 
-                if (parts.length === 4) {
-                    // Old format: id,room,style,tone,path
+                if (parts.length === 3) {
+                    // Format: id,room,path
                     id = parts[0];
                     room = parts[1];
-                    rowStyle = parts[2];
-                    url = parts[3].trim();
+                    url = parts[2].trim();
+                    rowStyle = '';
                 } else {
                     return null;
                 }
@@ -428,7 +436,7 @@ app.get('/api/rooms', (req: Request, res: Response) => {
                     filename: path.basename(url),
                     url: url,
                     roomType: normalizeString(room),
-                    style: normalizeString(rowStyle),
+                    // style: normalizeString(rowStyle), // Keep style in data but don't filter
                     // Original values for reference
                     _room: room,
                     _style: rowStyle
@@ -439,9 +447,7 @@ app.get('/api/rooms', (req: Request, res: Response) => {
             if (roomType) {
                 images = images.filter(img => img.roomType === normalizeString(roomType));
             }
-            if (style) {
-                images = images.filter(img => img.style === normalizeString(style));
-            }
+            // Style filter removed
 
             return res.json({ success: true, images });
         }
@@ -468,19 +474,13 @@ app.get('/api/rooms', (req: Request, res: Response) => {
                 .map(file => ({
                     filename: file,
                     url: `/images/rooms/${subdir}/${file}`,
-                    roomType: subdir,
-                    color: color || undefined,
-                    style: style || undefined
+                    roomType: subdir
                 }));
             allFiles = allFiles.concat(files);
         });
 
-        // Filter theo style nếu có (có thể mở rộng sau với metadata)
         // Hiện tại chỉ filter theo roomType, style có thể dùng để filter sau
         let filteredFiles = allFiles;
-        
-        // TODO: Có thể thêm logic filter theo style dựa vào metadata hoặc tên file
-        // Ví dụ: nếu có file metadata.json hoặc naming convention
         
         res.json({ success: true, images: filteredFiles });
     } catch (error: any) {

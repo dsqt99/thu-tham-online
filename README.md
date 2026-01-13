@@ -100,13 +100,14 @@ Nếu bạn cài Nginx trực tiếp trên Host (Ubuntu/CentOS), hãy tạo file
 
 ## Hướng dẫn sử dụng web
 
-1. Chọn `Loại phòng`, `Phong cách`, `Tông màu`.
+1. Chọn `Loại phòng` → `Phong cách`.
 2. Chọn thảm:
+   - Danh sách thảm sẽ được lọc theo `Phong cách` đã chọn.
    - `Chọn thảm có sẵn` để mở danh sách thảm.
    - Hoặc `Tải ảnh thảm lên`.
 3. Chọn ảnh phòng:
    - Bấm `Chọn ảnh phòng có sẵn` để mở danh sách ảnh phòng.
-   - Khi đang ở chế độ chọn ảnh có sẵn, danh sách sẽ tự reload theo bộ lọc `room/style/tone`.
+   - Khi đang ở chế độ chọn ảnh có sẵn, danh sách sẽ tự reload theo bộ lọc `room` (Loại phòng).
    - Hoặc `Tải ảnh phòng lên`.
 4. Bấm `✨ Click để tạo ảnh` để gọi API tạo ảnh.
 5. Kết quả hiển thị dạng popup: tải ảnh / đóng popup / tạo lại.
