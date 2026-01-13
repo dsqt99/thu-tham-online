@@ -7,5 +7,6 @@ dist/
 storage/temp/*
 !storage/temp/.gitkeep
 storage/usage.json
+storage/api_logs.txt
 images/
 **/images/
