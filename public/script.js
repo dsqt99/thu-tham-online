@@ -24,8 +24,8 @@ async function fetchAndRenderOptions() {
         const res = await fetch('/api/options');
         const data = await res.json();
         if (data.success && data.data) {
-             renderButtons('options-room-type', data.data.rooms);
-             renderButtons('options-style', data.data.styles);
+            renderButtons('options-room-type', data.data.rooms);
+            renderButtons('options-style', data.data.styles);
         }
     } catch (e) {
         console.error('Failed to fetch options', e);
@@ -37,7 +37,7 @@ function renderButtons(containerId, items) {
     const container = document.getElementById(containerId);
     if (!container) return;
     container.innerHTML = '';
-    
+
     // Sort items if needed, or keep order
     items.forEach(item => {
         const btn = document.createElement('button');
@@ -50,10 +50,10 @@ function renderButtons(containerId, items) {
 
 function normalizeString(str) {
     return str.normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .toLowerCase()
-            .replace(/\s+/g, '-')
-            .replace(/[^\w\-]+/g, '');
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w\-]+/g, '');
 }
 
 function startChatbot() {
@@ -68,11 +68,11 @@ function addBotMessage(text) {
     const messagesDiv = document.getElementById('chatbot-messages');
     const messageDiv = document.createElement('div');
     messageDiv.className = 'bot-message-group';
-    
+
     const bubble = document.createElement('div');
     bubble.className = 'bot-message';
     bubble.textContent = text;
-    
+
     messageDiv.appendChild(bubble);
     messagesDiv.appendChild(messageDiv);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -108,7 +108,7 @@ function ensureBotQuestion(key, text) {
         const textDiv = document.createElement('div');
         textDiv.className = 'bot-message';
         textDiv.textContent = text;
-        
+
         messageDiv.appendChild(textDiv);
         messagesDiv.appendChild(messageDiv);
     }
@@ -120,7 +120,7 @@ function ensureBotQuestion(key, text) {
         if (container && container.parentElement !== messageDiv) {
             messageDiv.appendChild(container);
             container.style.display = 'block';
-            
+
             // Scroll to bottom
             const messagesDiv = document.getElementById('chatbot-messages');
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -159,6 +159,11 @@ function setupEventListeners() {
             if (btnChooseRoomSample && btnChooseRoomSample.classList.contains('selected')) {
                 loadRooms();
             }
+            // Reload rugs if rug sample choice is active (filter by room)
+            const btnChooseRugSample = document.getElementById('btn-choose-rug-sample');
+            if (btnChooseRugSample && btnChooseRugSample.classList.contains('selected')) {
+                loadRugs();
+            }
             setTimeout(() => {
                 if (state.currentStep <= 1) {
                     showStep('style');
@@ -175,7 +180,7 @@ function setupEventListeners() {
             state.style = nextValue;
             setOptionSelected('#step-style', btn);
             updateBotSelection('style', btn.textContent);
-            
+
             // Reload rugs if rug sample choice is active
             const btnChooseRugSample = document.getElementById('btn-choose-rug-sample');
             if (btnChooseRugSample && btnChooseRugSample.classList.contains('selected')) {
@@ -318,7 +323,7 @@ function setupEventListeners() {
         state.uploadedRoomFile = file;
         state.selectedRoom = null;
         document.querySelectorAll('#rooms-list .image-item').forEach(el => el.classList.remove('selected'));
-        
+
         // Preview
         let previewUrl;
         if (file.type === 'image/heic' || file.name.toLowerCase().endsWith('.heic')) {
@@ -338,7 +343,7 @@ function setupEventListeners() {
         ensureBotQuestion('room', 'Bây giờ bạn muốn chọn ảnh phòng như thế nào?');
         updateBotSelection('room', file.name);
         updateGenerateButtonState();
-        
+
         setTimeout(() => {
             showStep('generate');
             ensureBotQuestion('generate', 'Anh/chị bấm \"✨ Click để tạo ảnh\" để tạo ảnh thảm trong phòng của anh/chị nhé!');
@@ -442,12 +447,16 @@ async function loadRugs() {
         if (state.style) {
             params.append('style', state.style);
         }
+        // Filter by room type (loại phòng) cho thảm
+        if (state.roomType) {
+            params.append('room', state.roomType);
+        }
         const queryString = params.toString();
         const url = queryString ? `/api/rugs?${queryString}` : '/api/rugs';
 
         const resp = await fetch(url);
         const data = await resp.json();
-        
+
         const rugsList = document.getElementById('rugs-list');
         rugsList.innerHTML = '';
 
@@ -468,16 +477,16 @@ async function loadRugs() {
                     </div>
                     <div class="img-name">${displayName}</div>
                 `;
-                
+
                 if (state.selectedRug && state.selectedRug.url === rug.url) {
                     rugDiv.classList.add('selected');
                 }
-                
+
                 rugDiv.addEventListener('click', () => {
                     // Remove previous selection
                     document.querySelectorAll('#rugs-list .image-item').forEach(el => el.classList.remove('selected'));
                     rugDiv.classList.add('selected');
-                    
+
                     // Ensure filename has extension for File object creation later
                     let filename = rug.filename;
                     if (filename && !filename.includes('.')) {
@@ -526,13 +535,13 @@ async function loadRooms() {
         if (state.roomType) {
             params.append('roomType', state.roomType);
         }
-        
+
         const queryString = params.toString();
         const url = queryString ? `/api/rooms?${queryString}` : '/api/rooms';
-        
+
         const resp = await fetch(url);
         const data = await resp.json();
-        
+
         const roomsList = document.getElementById('rooms-list');
         roomsList.innerHTML = '';
 
@@ -716,7 +725,7 @@ async function generateImage() {
             btnText.style.display = 'inline';
             btnSpinner.style.display = 'none';
             progressContainer.style.display = 'none';
-            
+
             // Hiển thị popup
             showRateLimitPopup(json.message || 'Bạn đã sử dụng tối đa 3 lần trong hôm nay. Vui lòng thử lại ngày mai hoặc liên hệ tư vấn.');
             return;
@@ -737,7 +746,7 @@ async function generateImage() {
         // Job started successfully, now poll for status
         const jobId = json.jobId;
         statusMsg.textContent = 'Đang xử lý (0%)...';
-        
+
         let pollCount = 0;
         const maxPolls = 60; // Limit to 5 minutes (50 * 6s)
 
@@ -747,13 +756,13 @@ async function generateImage() {
             if (pollCount > maxPolls) {
                 clearInterval(pollInterval);
                 clearInterval(progressInterval);
-                
+
                 // Reset UI
                 btnGenerate.disabled = false;
                 btnText.style.display = 'inline';
                 btnSpinner.style.display = 'none';
                 progressContainer.style.display = 'none';
-                
+
                 showErrorToast('Quá thời gian xử lý (timeout). Vui lòng thử lại sau.');
                 return;
             }
@@ -767,12 +776,12 @@ async function generateImage() {
                 }
 
                 const status = statusJson.status;
-                
+
                 // Update progress based on status
                 if (status === 'completed') {
                     clearInterval(pollInterval);
                     clearInterval(progressInterval);
-                    
+
                     progressFill.style.width = '100%';
                     progressText.textContent = '100%';
 
@@ -784,7 +793,7 @@ async function generateImage() {
                         if (statusJson.result.imageBase64) {
                             imgBase64 = statusJson.result.imageBase64;
                         }
-                        
+
                         if (statusJson.result.imageUrl) {
                             imgUrl = statusJson.result.imageUrl;
                         } else if (Array.isArray(statusJson.result.imageUrls) && statusJson.result.imageUrls.length > 0) {
@@ -799,7 +808,7 @@ async function generateImage() {
                     // Show result
                     const resultImg = document.getElementById('result-image');
                     const downloadBtn = document.getElementById('download-btn');
-                    
+
                     resultImg.onload = () => {
                         fitResultImage();
                     };
@@ -811,7 +820,7 @@ async function generateImage() {
                     if (imgBase64) {
                         const src = imgBase64.startsWith('data:image') ? imgBase64 : `data:image/jpeg;base64,${imgBase64}`;
                         resultImg.src = src;
-                        
+
                         // Setup download for Base64
                         downloadBtn.href = '#';
                         downloadBtn.onclick = (e) => {
@@ -857,7 +866,7 @@ async function generateImage() {
                     showResultPopup();
                     statusMsg.textContent = 'Hoàn tất!';
                     statusMsg.style.color = 'green';
-                    
+
                     // Reset UI logic
                     btnGenerate.disabled = false;
                     btnText.style.display = 'inline';
@@ -872,16 +881,16 @@ async function generateImage() {
             } catch (err) {
                 console.error('Polling error:', err);
                 if (err.message.includes('Lỗi kiểm tra trạng thái') || err.message.includes('thất bại')) {
-                     clearInterval(pollInterval);
-                     clearInterval(progressInterval);
-                     btnGenerate.disabled = false;
-                     btnText.style.display = 'inline';
-                     btnSpinner.style.display = 'none';
-                     progressContainer.style.display = 'none';
-                     statusMsg.textContent = err.message;
-                     statusMsg.style.color = 'red';
-                     
-                     showErrorToast(err.message);
+                    clearInterval(pollInterval);
+                    clearInterval(progressInterval);
+                    btnGenerate.disabled = false;
+                    btnText.style.display = 'inline';
+                    btnSpinner.style.display = 'none';
+                    progressContainer.style.display = 'none';
+                    statusMsg.textContent = err.message;
+                    statusMsg.style.color = 'red';
+
+                    showErrorToast(err.message);
                 }
             }
         }, 6000);
@@ -889,12 +898,12 @@ async function generateImage() {
     } catch (error) {
         clearInterval(progressInterval);
         console.error('Generate error:', error);
-        
+
         btnGenerate.disabled = false;
         btnText.style.display = 'inline';
         btnSpinner.style.display = 'none';
         progressContainer.style.display = 'none';
-        
+
         statusMsg.textContent = 'Có lỗi xảy ra: ' + error.message;
         statusMsg.style.color = 'red';
     }
@@ -918,15 +927,15 @@ function showErrorToast(message) {
         toast.style.alignItems = 'center';
         toast.style.gap = '10px';
         toast.style.transition = 'opacity 0.3s ease';
-        
+
         const icon = document.createElement('span');
         icon.innerHTML = '⚠️';
         toast.appendChild(icon);
-        
+
         const text = document.createElement('span');
         text.id = 'error-toast-text';
         toast.appendChild(text);
-        
+
         const close = document.createElement('button');
         close.innerHTML = '×';
         close.style.background = 'none';
@@ -937,14 +946,14 @@ function showErrorToast(message) {
         close.style.marginLeft = '10px';
         close.onclick = () => { toast.style.opacity = '0'; setTimeout(() => toast.style.display = 'none', 300); };
         toast.appendChild(close);
-        
+
         document.body.appendChild(toast);
     }
-    
+
     document.getElementById('error-toast-text').textContent = message;
     toast.style.display = 'flex';
     toast.style.opacity = '1';
-    
+
     setTimeout(() => {
         toast.style.opacity = '0';
         setTimeout(() => toast.style.display = 'none', 300);
@@ -995,7 +1004,7 @@ function resetFlow() {
     if (roomInput) roomInput.value = '';
     const rugInput = document.getElementById('rug-file-input');
     if (rugInput) rugInput.value = '';
-    
+
     // Reset button và progress
     const btnGenerate = document.getElementById('btn-generate');
     const btnText = document.getElementById('btn-text');
@@ -1003,7 +1012,7 @@ function resetFlow() {
     const progressContainer = document.getElementById('progress-container');
     const progressFill = document.getElementById('progress-fill');
     const progressText = document.getElementById('progress-text');
-    
+
     btnGenerate.disabled = false;
     btnText.style.display = 'inline';
     btnSpinner.style.display = 'none';

@@ -12,5 +12,11 @@
     "Bắc Âu",
     "Vintage"
   ],
+  "rugRooms": [
+    "phong-khach",
+    "phong-ngu",
+    "phong-bep",
+    "phong-sinh-hoat-chung"
+  ],
   "tones": []
 }

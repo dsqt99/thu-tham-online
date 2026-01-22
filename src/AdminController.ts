@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as xlsx from 'xlsx';
 import axios from 'axios';
+import * as https from 'https';
 
 export class AdminController {
     private storageDir = path.join(__dirname, '../storage');
@@ -56,7 +57,8 @@ export class AdminController {
                 url,
                 method: 'GET',
                 responseType: 'stream',
-                validateStatus: (status) => status >= 200 && status < 400
+                validateStatus: (status) => status >= 200 && status < 400,
+                httpsAgent: new https.Agent({ rejectUnauthorized: false })
             });
 
             const ext = this.getExtensionFromUrl(url) || this.getExtensionFromContentType(response.headers?.['content-type']) || '.jpg';
@@ -96,13 +98,16 @@ export class AdminController {
 
             this.clearImagesSubdir('rooms');
 
-            // CSV Header: id,room,path
-            const csvLines = ['id,room,path'];
+            // CSV Header: id,room,code,path
+            const csvLines = ['id,room,code,path'];
             let count = 0;
 
             for (const row of data) {
-                // Expected columns: id, room, link
+                // Expected columns: id, room, code (or room_code), link
                 const { id, room, link } = row;
+                // Support both 'code' (from demo) and 'room_code'
+                const roomCode = row.code || row.room_code || '';
+
                 if (!link) continue;
 
                 // Create filename by id
@@ -115,7 +120,7 @@ export class AdminController {
 
                 // Add to CSV
                 const relativePath = `/images/rooms/${filenameBase}${dl.ext}`;
-                csvLines.push(`${id},${room || ''},${relativePath}`);
+                csvLines.push(`${id},${room},${roomCode},${relativePath}`);
                 count++;
             }
 
@@ -153,13 +158,14 @@ export class AdminController {
 
             this.clearImagesSubdir('rugs');
 
-            // CSV Header: id,name,code,style,path
-            const csvLines = ['id,name,code,style,path'];
+            // CSV Header: id,name,code,style,room_code,path
+            const csvLines = ['id,name,code,style,room_code,path'];
             let count = 0;
 
             for (const row of data) {
-                // Expected columns: id, name, code, style, link
-                const { id, name, code, style, link } = row;
+                // Expected columns: id, name, code, style, room, link
+                // Note: 'room' from Excel is already normalized (e.g., 'phong-khach')
+                const { id, name, code, style, room, link } = row;
                 if (!link) continue;
 
                 const filenameBase = `${code || id}`;
@@ -169,16 +175,19 @@ export class AdminController {
                 const dl = await this.downloadImage(link, localPathBase);
                 if (!dl.ok || !dl.ext) continue;
 
+                // room from Excel is already normalized code (e.g., 'phong-khach')
+                const roomCode = room || '';
+
                 const relativePath = `/images/rugs/${filenameBase}${dl.ext}`;
-                csvLines.push(`${id},${name || ''},${code || ''},${style || ''},${relativePath}`);
+                csvLines.push(`${id},${name || ''},${code || ''},${style || ''},${roomCode},${relativePath}`);
                 count++;
             }
 
             // Write CSV
             fs.writeFileSync(path.join(this.storageDir, 'rugs.csv'), csvLines.join('\n'));
 
-            // Update options.json (Styles only)
-            this.updateStyleOptions(data);
+            // Update options.json (Styles and rugRooms)
+            this.updateRugOptions(data);
 
             // Cleanup
             if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
@@ -191,7 +200,7 @@ export class AdminController {
     };
 
     // Helper to read options
-    private readOptions(): { rooms: string[], styles: string[], tones: string[] } {
+    private readOptions(): { rooms: string[], styles: string[], rugRooms: string[], tones: string[] } {
         const optionsPath = path.join(this.storageDir, 'options.json');
         if (fs.existsSync(optionsPath)) {
             try {
@@ -200,7 +209,7 @@ export class AdminController {
                 console.error('Error reading options.json:', e);
             }
         }
-        return { rooms: [], styles: [], tones: [] };
+        return { rooms: [], styles: [], rugRooms: [], tones: [] };
     }
 
     // Helper to save options
@@ -212,7 +221,7 @@ export class AdminController {
     private updateRoomOptions(data: any[]) {
         const options = this.readOptions();
         const rooms = new Set<string>();
-        
+
         data.forEach(row => {
             if (row.room) rooms.add(row.room);
         });
@@ -221,7 +230,7 @@ export class AdminController {
         this.saveOptions(options);
     }
 
-    // Update Style Options (from Rugs)
+    // Update Style Options (from Rugs) - kept for backward compatibility
     private updateStyleOptions(data: any[]) {
         const options = this.readOptions();
         const styles = new Set<string>();
@@ -231,6 +240,22 @@ export class AdminController {
         });
 
         options.styles = Array.from(styles);
+        this.saveOptions(options);
+    }
+
+    // Update Rug Options (Styles and Room types from Rugs)
+    private updateRugOptions(data: any[]) {
+        const options = this.readOptions();
+        const styles = new Set<string>();
+        const rugRooms = new Set<string>();
+
+        data.forEach(row => {
+            if (row.style) styles.add(row.style);
+            if (row.room) rugRooms.add(row.room);
+        });
+
+        options.styles = Array.from(styles);
+        options.rugRooms = Array.from(rugRooms);
         this.saveOptions(options);
     }
 
@@ -252,12 +277,13 @@ export class AdminController {
                 return res.json({ success: true, data: JSON.parse(options) });
             }
             // Default if no file
-            return res.json({ 
-                success: true, 
-                data: { 
+            return res.json({
+                success: true,
+                data: {
                     rooms: ['Phòng khách', 'Phòng ngủ', 'Phòng làm việc', 'Phòng bếp'],
                     styles: ['Hiện đại', 'Cổ điển', 'Tối giản', 'Scandinavian'],
-                } 
+                    rugRooms: ['Phòng khách', 'Phòng ngủ'],
+                }
             });
         } catch (error: any) {
             return res.status(500).json({ success: false, message: error.message });

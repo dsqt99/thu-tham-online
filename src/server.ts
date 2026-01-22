@@ -192,7 +192,7 @@ app.post('/upload', upload.fields([
         limiter.ensureCookie(req, res);
 
         const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-        
+
         // Helper function to cleanup temp files
         const cleanupTempFiles = () => {
             try {
@@ -216,7 +216,7 @@ app.post('/upload', upload.fields([
                 message: 'Bạn đã sử dụng tối đa 3 lần trong hôm nay. Vui lòng thử lại ngày mai hoặc liên hệ tư vấn.'
             });
         }
-        
+
         if (!files || !files['room'] || !files['rug']) {
             cleanupTempFiles(); // Xóa file temp nếu thiếu file
             return res.json({ success: false, message: 'Thiếu file upload' });
@@ -236,12 +236,12 @@ app.post('/upload', upload.fields([
         // Validate file sizes
         const maxRoom = 10 * 1024 * 1024; // 10MB
         const maxRug = 5 * 1024 * 1024;   // 5MB
-        
+
         if (roomFile.size > maxRoom) {
             cleanupTempFiles(); // Xóa file temp nếu quá lớn
             return res.json({ success: false, message: 'Ảnh phòng vượt quá 10MB' });
         }
-        
+
         if (rugFile.size > maxRug) {
             cleanupTempFiles(); // Xóa file temp nếu quá lớn
             return res.json({ success: false, message: 'Ảnh thảm vượt quá 5MB' });
@@ -275,7 +275,7 @@ app.post('/upload', upload.fields([
         });
     } catch (error: any) {
         console.error('Upload error:', error);
-        
+
         // Ensure temp files are cleaned up on exception
         try {
             const files = req.files as { [fieldname: string]: Express.Multer.File[] };
@@ -290,7 +290,7 @@ app.post('/upload', upload.fields([
         } catch (cleanupErr) {
             console.error('Cleanup error:', cleanupErr);
         }
-        
+
         return res.status(500).json({
             success: false,
             message: error.message || 'Lỗi server'
@@ -321,22 +321,70 @@ app.get('/api/job-status/:jobId', async (req: Request, res: Response) => {
 app.get('/api/rugs', (req: Request, res: Response) => {
     try {
         const style = req.query.style as string;
+        const room = req.query.room as string;
         const csvPath = path.join(__dirname, '../storage/rugs.csv');
         if (fs.existsSync(csvPath)) {
             const content = fs.readFileSync(csvPath, 'utf-8');
             const lines = content.split('\n').filter(line => line.trim() !== '');
             // Skip header
             const dataLines = lines.slice(1);
-            
+
             const images = dataLines.map(line => {
                 const parts = line.split(',');
-                if (parts.length >= 5) {
+                if (parts.length >= 6) {
+                    // New format: id,name,code,style,room_code,path
+                    const id = parts[0];
+                    const name = parts[1];
+                    const code = parts[2];
+                    const rowStyle = parts[3];
+                    const rowRoomCode = parts[4]; // Already normalized (e.g., 'phong-khach')
+                    const url = parts[5].trim();
+
+                    if (!url) return null;
+
+                    // Filter by style if provided
+                    if (style && normalizeString(rowStyle) !== normalizeString(style)) {
+                        return null;
+                    }
+
+                    // Filter by room code if provided (compare normalized values)
+                    if (room && rowRoomCode !== normalizeString(room)) {
+                        return null;
+                    }
+
+                    // Verify file existence
+                    let localPath = '';
+                    if (url.startsWith('/images/')) {
+                        // Resolve absolute path to images folder
+                        const imagesDir = path.resolve(__dirname, '../images');
+                        // Remove /images/ prefix to get relative path inside imagesDir
+                        const relativePath = url.replace(/^\/images\//, '');
+                        localPath = path.join(imagesDir, relativePath);
+                    }
+
+                    if (localPath && !fs.existsSync(localPath)) {
+                        console.warn(`[Missing File] URL: ${url} -> Path: ${localPath}`);
+                        // return null; // Keep it commented unless we want to hide it
+                    } else {
+                        // console.log(`[Found File] URL: ${url}`);
+                    }
+
+                    return {
+                        filename: name || code || path.basename(url),
+                        url: url,
+                        name: name,
+                        code: code,
+                        style: rowStyle,
+                        room_code: rowRoomCode
+                    };
+                } else if (parts.length >= 5) {
+                    // Old format: id,name,code,style,path (backward compatibility)
                     const id = parts[0];
                     const name = parts[1];
                     const code = parts[2];
                     const rowStyle = parts[3];
                     const url = parts[4].trim();
-                    
+
                     if (!url) return null;
 
                     // Filter by style if provided
@@ -347,18 +395,13 @@ app.get('/api/rugs', (req: Request, res: Response) => {
                     // Verify file existence
                     let localPath = '';
                     if (url.startsWith('/images/')) {
-                         // Resolve absolute path to images folder
-                         const imagesDir = path.resolve(__dirname, '../images');
-                         // Remove /images/ prefix to get relative path inside imagesDir
-                         const relativePath = url.replace(/^\/images\//, ''); 
-                         localPath = path.join(imagesDir, relativePath);
+                        const imagesDir = path.resolve(__dirname, '../images');
+                        const relativePath = url.replace(/^\/images\//, '');
+                        localPath = path.join(imagesDir, relativePath);
                     }
-                    
+
                     if (localPath && !fs.existsSync(localPath)) {
-                         console.warn(`[Missing File] URL: ${url} -> Path: ${localPath}`);
-                         // return null; // Keep it commented unless we want to hide it
-                    } else {
-                         // console.log(`[Found File] URL: ${url}`);
+                        console.warn(`[Missing File] URL: ${url} -> Path: ${localPath}`);
                     }
 
                     return {
@@ -366,7 +409,8 @@ app.get('/api/rugs', (req: Request, res: Response) => {
                         url: url,
                         name: name,
                         code: code,
-                        style: rowStyle
+                        style: rowStyle,
+                        room_code: ''
                     };
                 }
                 return null;
@@ -418,28 +462,36 @@ app.get('/api/rooms', (req: Request, res: Response) => {
 
             let images = dataLines.map(line => {
                 const parts = line.split(',');
-                let id, room, rowStyle, url;
+                let id, room, roomCode, url;
 
-                if (parts.length === 3) {
-                    // Format: id,room,path
+                if (parts.length >= 4) {
+                    // New Format: id,room,room_code,path
+                    id = parts[0];
+                    room = parts[1];
+                    roomCode = parts[2];
+                    url = parts[3].trim();
+                } else if (parts.length === 3) {
+                    // Old Format: id,room,path
                     id = parts[0];
                     room = parts[1];
                     url = parts[2].trim();
-                    rowStyle = '';
+                    roomCode = '';
                 } else {
                     return null;
                 }
 
                 if (!url) return null;
 
+                // Use explicit roomCode if available, otherwise normalize 'room' name
+                const effectiveRoomType = roomCode ? roomCode : normalizeString(room);
+
                 return {
                     filename: path.basename(url),
                     url: url,
-                    roomType: normalizeString(room),
-                    // style: normalizeString(rowStyle), // Keep style in data but don't filter
+                    roomType: effectiveRoomType,
                     // Original values for reference
                     _room: room,
-                    _style: rowStyle
+                    _roomCode: roomCode
                 };
             }).filter(item => item !== null) as any[];
 
@@ -481,7 +533,7 @@ app.get('/api/rooms', (req: Request, res: Response) => {
 
         // Hiện tại chỉ filter theo roomType, style có thể dùng để filter sau
         let filteredFiles = allFiles;
-        
+
         res.json({ success: true, images: filteredFiles });
     } catch (error: any) {
         res.status(500).json({ success: false, message: error.message });
@@ -537,7 +589,7 @@ function cleanupOldTempFiles() {
             try {
                 const stats = fs.statSync(filePath);
                 const age = now - stats.mtimeMs;
-                
+
                 if (age > maxAge) {
                     fs.unlinkSync(filePath);
                     console.log(`Đã xóa file tạm cũ: ${file}`);

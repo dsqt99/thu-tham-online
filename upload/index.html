@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,30 +13,37 @@
             padding: 20px;
             background-color: #f5f5f5;
         }
-        h1, h2 {
+
+        h1,
+        h2 {
             color: #8c7156;
         }
+
         .card {
             background: white;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
         }
+
         .form-group {
             margin-bottom: 15px;
         }
+
         label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
         }
+
         input[type="file"] {
             border: 1px solid #ddd;
             padding: 10px;
             width: 100%;
             border-radius: 4px;
         }
+
         button {
             background-color: #8c7156;
             color: white;
@@ -45,27 +53,33 @@
             cursor: pointer;
             font-size: 16px;
         }
+
         button:hover {
             background-color: #6d5843;
         }
+
         button:disabled {
             background-color: #ccc;
             cursor: not-allowed;
         }
+
         .status {
             margin-top: 10px;
             padding: 10px;
             border-radius: 4px;
             display: none;
         }
+
         .status.success {
             background-color: #d4edda;
             color: #155724;
         }
+
         .status.error {
             background-color: #f8d7da;
             color: #721c24;
         }
+
         .loader {
             display: inline-block;
             width: 20px;
@@ -78,24 +92,33 @@
             vertical-align: middle;
             display: none;
         }
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
+
 <body>
     <h1>Admin Upload Center</h1>
-    
+
     <div id="admin-login" class="card" style="display: none;">
         <h2>Đăng nhập</h2>
         <div class="form-group">
             <label for="adminUsername">Username</label>
-            <input id="adminUsername" type="text" autocomplete="username" style="border: 1px solid #ddd; padding: 10px; width: 90%; border-radius: 4px;">
+            <input id="adminUsername" type="text" autocomplete="username"
+                style="border: 1px solid #ddd; padding: 10px; width: 90%; border-radius: 4px;">
         </div>
         <div class="form-group">
             <label for="adminPassword">Password</label>
-            <input id="adminPassword" type="password" autocomplete="current-password" style="border: 1px solid #ddd; padding: 10px; width: 90%; border-radius: 4px;">
+            <input id="adminPassword" type="password" autocomplete="current-password"
+                style="border: 1px solid #ddd; padding: 10px; width: 90%; border-radius: 4px;">
         </div>
         <button id="adminLoginBtn" onclick="loginAdmin()">
             Đăng nhập
@@ -107,7 +130,8 @@
     <div id="admin-content" style="display: none;">
         <div class="card">
             <h2>Tài khoản</h2>
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <div
+                style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
                 <div id="adminUserLabel"></div>
                 <button onclick="logoutAdmin()">Đăng xuất</button>
             </div>
@@ -115,7 +139,8 @@
 
         <div class="card">
             <h2>1. Upload Dữ Liệu Phòng (Rooms)</h2>
-            <p>File Excel cần có các cột: <code>id</code>, <code>room</code>, <code>link</code> (URL ảnh)</p>
+            <p>File Excel cần có các cột: <code>id</code>, <code>room</code>, <code>code</code>, <code>link</code>
+                (URL ảnh)</p>
             <div class="form-group">
                 <input type="file" id="roomsFile" accept=".xlsx, .xls, .csv">
             </div>
@@ -128,7 +153,9 @@
 
         <div class="card">
             <h2>2. Upload Dữ Liệu Thảm (Rugs)</h2>
-            <p>File Excel cần có các cột: <code>id</code>, <code>name</code>, <code>code</code>, <code>style</code>, <code>link</code> (URL ảnh)</p>
+            <p>File Excel cần có các cột: <code>id</code>, <code>name</code>, <code>code</code>, <code>style</code>,
+                <code>link</code> (URL ảnh)
+            </p>
             <div class="form-group">
                 <input type="file" id="rugsFile" accept=".xlsx, .xls, .csv">
             </div>
@@ -149,7 +176,7 @@
                     setAuthed(true, json.username);
                     return;
                 }
-            } catch (e) {}
+            } catch (e) { }
             setAuthed(false);
         }
 
@@ -211,7 +238,7 @@
         async function logoutAdmin() {
             try {
                 await fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' });
-            } catch (e) {}
+            } catch (e) { }
             setAuthed(false);
         }
 
@@ -239,7 +266,7 @@
                     body: formData
                 });
                 const result = await response.json();
-                
+
                 if (response.ok) {
                     showStatus(statusDiv, `Thành công! Đã thêm ${result.count} ảnh phòng.`, 'success');
                 } else if (response.status === 401) {
@@ -279,7 +306,7 @@
                     body: formData
                 });
                 const result = await response.json();
-                
+
                 if (response.ok) {
                     showStatus(statusDiv, `Thành công! Đã thêm ${result.count} ảnh thảm.`, 'success');
                 } else if (response.status === 401) {
@@ -309,4 +336,5 @@
         checkAdmin();
     </script>
 </body>
+
 </html>

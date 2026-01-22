@@ -1,29 +1,29 @@
-id,room,path
-1,Phòng bếp,/images/rooms/1.jpg
-2,Phòng bếp,/images/rooms/2.jpg
-3,Phòng bếp,/images/rooms/3.jpg
-4,Phòng bếp,/images/rooms/4.jpg
-5,Phòng bếp,/images/rooms/5.jpg
-6,Phòng bếp,/images/rooms/6.jpg
-7,Phòng bếp,/images/rooms/7.jpg
-8,Phòng khách,/images/rooms/8.jpg
-9,Phòng khách,/images/rooms/9.jpg
-10,Phòng khách,/images/rooms/10.jpg
-11,Phòng khách,/images/rooms/11.jpg
-12,Phòng khách,/images/rooms/12.jpg
-13,Phòng khách,/images/rooms/13.jpg
-14,Phòng khách,/images/rooms/14.jpg
-15,Phòng khách,/images/rooms/15.jpg
-16,Phòng sinh hoạt chung,/images/rooms/16.jpg
-17,Phòng sinh hoạt chung,/images/rooms/17.jpg
-18,Phòng sinh hoạt chung,/images/rooms/18.jpg
-19,Phòng sinh hoạt chung,/images/rooms/19.jpg
-20,Phòng sinh hoạt chung,/images/rooms/20.jpg
-21,Phòng sinh hoạt chung,/images/rooms/21.jpg
-22,Phòng ngủ,/images/rooms/22.jpg
-23,Phòng ngủ,/images/rooms/23.jpg
-24,Phòng ngủ,/images/rooms/24.jpg
-25,Phòng ngủ,/images/rooms/25.jpg
-26,Phòng ngủ,/images/rooms/26.jpg
-27,Phòng ngủ,/images/rooms/27.jpg
-28,Phòng ngủ,/images/rooms/28.jpg
+id,room,code,path
+1,Phòng bếp,phong-bep,/images/rooms/1.jpg
+2,Phòng bếp,phong-bep,/images/rooms/2.jpg
+3,Phòng bếp,phong-bep,/images/rooms/3.jpg
+4,Phòng bếp,phong-bep,/images/rooms/4.jpg
+5,Phòng bếp,phong-bep,/images/rooms/5.jpg
+6,Phòng bếp,phong-bep,/images/rooms/6.jpg
+7,Phòng bếp,phong-bep,/images/rooms/7.jpg
+8,Phòng khách,phong-khach,/images/rooms/8.jpg
+9,Phòng khách,phong-khach,/images/rooms/9.jpg
+10,Phòng khách,phong-khach,/images/rooms/10.jpg
+11,Phòng khách,phong-khach,/images/rooms/11.jpg
+12,Phòng khách,phong-khach,/images/rooms/12.jpg
+13,Phòng khách,phong-khach,/images/rooms/13.jpg
+14,Phòng khách,phong-khach,/images/rooms/14.jpg
+15,Phòng khách,phong-khach,/images/rooms/15.jpg
+16,Phòng sinh hoạt chung,phong-sinh-hoat-chung,/images/rooms/16.jpg
+17,Phòng sinh hoạt chung,phong-sinh-hoat-chung,/images/rooms/17.jpg
+18,Phòng sinh hoạt chung,phong-sinh-hoat-chung,/images/rooms/18.jpg
+19,Phòng sinh hoạt chung,phong-sinh-hoat-chung,/images/rooms/19.jpg
+20,Phòng sinh hoạt chung,phong-sinh-hoat-chung,/images/rooms/20.jpg
+21,Phòng sinh hoạt chung,phong-sinh-hoat-chung,/images/rooms/21.jpg
+22,Phòng ngủ,phong-ngu,/images/rooms/22.jpg
+23,Phòng ngủ,phong-ngu,/images/rooms/23.jpg
+24,Phòng ngủ,phong-ngu,/images/rooms/24.jpg
+25,Phòng ngủ,phong-ngu,/images/rooms/25.jpg
+26,Phòng ngủ,phong-ngu,/images/rooms/26.jpg
+27,Phòng ngủ,phong-ngu,/images/rooms/27.jpg
+28,Phòng ngủ,phong-ngu,/images/rooms/28.jpg

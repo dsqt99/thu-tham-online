@@ -3,7 +3,7 @@
 Ứng dụng web chọn thảm + ảnh phòng và gọi AI để “trải thảm vào phòng”.
 
 **Tính năng**
-- Giao diện chat chọn `phòng` → `phong cách` → `tông màu` → chọn `thảm` → chọn `ảnh phòng` → tạo ảnh.
+- Giao diện chat chọn `phòng` → `phong cách` → chọn `thảm` → chọn `ảnh phòng` → tạo ảnh.
 - Chọn ảnh từ thư viện hoặc tự upload (hỗ trợ JPG/PNG/WEBP; phòng hỗ trợ thêm HEIC).
 - Popup hiển thị kết quả, tải ảnh về máy, tạo lại ảnh khác.
 - Giới hạn số lượt tạo ảnh theo ngày (mặc định `3`).
@@ -107,7 +107,7 @@ Nếu bạn cài Nginx trực tiếp trên Host (Ubuntu/CentOS), hãy tạo file
    - Hoặc `Tải ảnh thảm lên`.
 3. Chọn ảnh phòng:
    - Bấm `Chọn ảnh phòng có sẵn` để mở danh sách ảnh phòng.
-   - Khi đang ở chế độ chọn ảnh có sẵn, danh sách sẽ tự reload theo bộ lọc `room` (Loại phòng).
+   - Danh sách sẽ tự reload theo bộ lọc `Loại phòng` (room).
    - Hoặc `Tải ảnh phòng lên`.
 4. Bấm `✨ Click để tạo ảnh` để gọi API tạo ảnh.
 5. Kết quả hiển thị dạng popup: tải ảnh / đóng popup / tạo lại.
@@ -135,14 +135,14 @@ Endpoint: `POST /api/admin/upload-rooms`
 
 File Excel cần có các cột:
 - `id`: định danh (nên unique).
-- `room`: tên phòng (tuỳ ý).
-- `style`: phong cách (tuỳ ý).
+- `room`: tên phòng hiển thị (ví dụ: "Phòng khách").
+- `code`: mã phòng (normalized, ví dụ: "phong-khach"). Dùng để lọc.
 - `link`: URL ảnh phòng (nên là link ảnh trực tiếp có đuôi `.jpg/.png/.webp`).
 
 Khi upload rooms:
 - Xoá sạch toàn bộ ảnh cũ trong `images/rooms/` rồi tải ảnh mới vào lại.
 - Ghi `storage/rooms.csv`.
-- Cập nhật `storage/options.json` để UI dùng làm danh sách `room/style`.
+- Cập nhật danh sách `rooms` trong `storage/options.json` để UI hiển thị.
 
 ### Upload dữ liệu Rugs
 
@@ -152,27 +152,29 @@ File Excel cần có các cột:
 - `id`: định danh.
 - `name`: tên hiển thị.
 - `code`: mã thảm (khuyến nghị unique).
+- `style`: phong cách (tuỳ ý).
+- `room`: mã phòng (normalized, ví dụ: "phong-khach"). Dùng để lọc thảm theo loại phòng đã chọn.
 - `link`: URL ảnh thảm (nên là link ảnh trực tiếp có đuôi `.jpg/.png/.webp`).
 
 Khi upload rugs:
 - Xoá sạch toàn bộ ảnh cũ trong `images/rugs/` rồi tải ảnh mới vào lại.
 - Ghi `storage/rugs.csv`.
+- Cập nhật danh sách `styles` và `rugRooms` (danh sách loại phòng của thảm) trong `storage/options.json`.
 
 ## Lưu trữ dữ liệu
 
 - `images/rooms/`: ảnh phòng đã tải về từ Admin Upload (mỗi lần upload rooms sẽ xoá và tải lại).
 - `images/rugs/`: ảnh thảm đã tải về từ Admin Upload (mỗi lần upload rugs sẽ xoá và tải lại).
-- `storage/rooms.csv`: dữ liệu rooms + đường dẫn ảnh.
-- `storage/rugs.csv`: dữ liệu rugs + đường dẫn ảnh.
+- `storage/rooms.csv`: dữ liệu rooms + đường dẫn ảnh (id, room, code, path).
+- `storage/rugs.csv`: dữ liệu rugs + đường dẫn ảnh (id, name, code, style, room_code, path).
 - `storage/options.json`: danh sách `rooms/styles` hiển thị ở UI.
 - `storage/usage.json`: bộ đếm giới hạn lượt tạo ảnh theo ngày.
 - `storage/temp/`: file upload tạm khi user tạo ảnh.
 
-## Rooms / Style có thể điền bất kỳ
-
-- `room`, `style` trong file rooms có thể là chuỗi bất kỳ.
-- Hệ thống sẽ normalize để lọc (bỏ dấu, viết thường, thay khoảng trắng bằng `-`).
-- Để thêm lựa chọn mới cho UI, chỉ cần thêm giá trị mới vào file rooms và upload lại (options sẽ tự cập nhật).
+## Rooms / Style / Code
+- `room` (tên hiển thị) và `style` (phong cách) có thể chứa tiếng Việt có dấu.
+- `code` (mã phòng) và `room_code` (mã loại phòng của thảm) nên dùng định dạng normalized (không dấu, viết thường, nối bằng gạch ngang, ví dụ `phong-khach`) để đảm bảo bộ lọc hoạt động chính xác.
+- Khi user chọn loại phòng (ví dụ "Phòng khách"), hệ thống sẽ lọc ảnh phòng và thảm có code tương ứng (ví dụ `phong-khach`).
 
 1. gcloud init
 2. gcloud compute ssh --zone "asia-southeast1-c" "instance-20250912-094812" --project "continew-ai-471909"
